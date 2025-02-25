@@ -3,8 +3,6 @@ const History = require("../models/History");
 const getHistory = async (req, res) => {
   try {
 
-    // console.log("Params: ", req.params);
-    console.log("Query: ", req.query)
 
     const userId = req.user.id;
     const page = parseInt(req.query.page) || 1;  // Default to page 1 if not provided

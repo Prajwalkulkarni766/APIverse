@@ -32,6 +32,53 @@ const getCollections = async (req, res) => {
   }
 };
 
+// Get all collections for a user with name and id
+const getCollectionsName = async (req, res) => {
+  const userId = req.user.id;
+
+  try {
+    const collections = await Collection.find({ userId }).select("name");
+    res.status(200).json(collections);
+  } catch (err) {
+    res.status(500).json({ message: "Failed to fetch collections", error: err.message });
+  }
+};
+
+// Get particular collection
+const getCollectionById = async (req, res) => {
+  const { collectionId } = req.params;
+
+  try {
+    const collection = await Collection.findById(collectionId);
+    res.status(200).json(collection);
+  } catch (err) {
+    res.status(500).json({ message: "Failed to fetch collection", error: err.message });
+  }
+};
+
+// Get collection requests name
+const getCollectionRequestName = async (req, res) => {
+  const { collectionId } = req.params;
+
+  try {
+    const collection = await Collection.findById(collectionId).select("requests");
+    
+    if (!collection) {
+      return res.status(404).json({ message: "Collection not found" });
+    }
+
+    // Extract only the 'name' and 'method' from each request
+    const requests = collection.requests.map(request => ({
+      name: request.name,
+      method: request.method
+    }));
+
+    res.status(200).json(requests);
+  } catch (err) {
+    res.status(500).json({ message: "Failed to fetch requests", error: err.message });
+  }
+};
+
 // Add a request to an existing collection
 const addRequestToCollection = async (req, res) => {
   const { collectionId } = req.params;
@@ -71,6 +118,7 @@ const deleteCollection = async (req, res) => {
   }
 };
 
+// Export the collection
 const exportCollection = async (req, res) => {
   const { collectionId } = req.params;
 
@@ -89,6 +137,7 @@ const exportCollection = async (req, res) => {
   }
 };
 
+// Import the collection
 const importCollection = async (req, res) => {
   try {
     const fileData = JSON.parse(req.file.buffer.toString());
@@ -194,5 +243,30 @@ const searchAndFilterCollections = async (req, res) => {
   }
 };
 
+// Update the collection
+const updateTheCollection = async(req, res) => {
+  try {
+    const { collectionId } = req.params;
+    const { name, description, requests, sharedWith } = req.body;
 
-module.exports = { createCollection, getCollections, addRequestToCollection, deleteCollection, exportCollection, importCollection, duplicateCollection, shareCollection, searchAndFilterCollections };
+    const collection = await Collection.findById(collectionId);
+    
+    if (!collection) {
+      return res.status(404).json({ message: "Collection not found" });
+    }
+
+    if (name) collection.name = name;
+    if (description) collection.description = description;
+    if (requests) collection.requests = requests;
+    if (sharedWith) collection.sharedWith = sharedWith;
+
+    const updatedCollection = await collection.save();
+
+    res.status(200).json(updatedCollection);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: "Server error" });
+  }
+}
+
+module.exports = { createCollection, getCollections, addRequestToCollection, deleteCollection, exportCollection, importCollection, duplicateCollection, shareCollection, searchAndFilterCollections, getCollectionsName, getCollectionById, getCollectionRequestName, updateTheCollection };

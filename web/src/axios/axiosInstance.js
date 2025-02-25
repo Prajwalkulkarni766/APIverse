@@ -19,7 +19,7 @@ axiosInstance.interceptors.request.use(
   (config) => {
     store.dispatch(startLoading());
     // const updatedToken = getToken();
-    const updatedToken = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjY3OGZhNDg4NmRhNDQxYzkzOTg2NTljZiIsImlhdCI6MTc0MDEzNjAxMywiZXhwIjoxNzQwNDYwMDEzfQ.0tFv9pL8n6j7wmt8Zcky1VWkTnynTT0LbCNU8vZAVGg";
+    const updatedToken = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjY3OGZhNDg4NmRhNDQxYzkzOTg2NTljZiIsImlhdCI6MTc0MDUxNDU2NywiZXhwIjoxNzQwODM4NTY3fQ._zpF_GUyoPLys5Q_ZqEGGn_kbFi2bkThjlk82_TaUbY";
     if (
       updatedToken &&
       updatedToken !== config.headers.Authorization?.split(" ")[1]

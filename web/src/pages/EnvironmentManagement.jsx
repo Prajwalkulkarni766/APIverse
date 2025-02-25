@@ -69,8 +69,6 @@ export default function EnvironmentManagement() {
         const response = await axiosInstance.post("/environments", newEnv);
 
         setEnvironments([...environments, response.data]);
-
-        console.log("Environment created successfully:", response.data);
       } catch (err) {
         setError("An error occurred while creating the environment.");
         console.error("Error creating environment:", err);

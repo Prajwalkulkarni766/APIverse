@@ -7,6 +7,7 @@ const CollectionSchema = new mongoose.Schema(
     description: { type: String },
     requests: [
       {
+        name: { type: String, required: true },
         method: { type: String, required: true },
         url: { type: String, required: true },
         headers: { type: Object, default: {} },

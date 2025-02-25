@@ -24,7 +24,6 @@ export default function SignIn() {
         password,
         rememberMe,
       });
-      console.log("Login successful:", response.data.token);
       dispatch(setToken(response.data.token));
       // navigate to home page
     } catch (err) {
