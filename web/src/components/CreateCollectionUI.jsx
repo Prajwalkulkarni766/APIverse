@@ -1,12 +1,10 @@
-import { useState } from 'react';
+import { useState } from "react";
 import { BsCloudUpload } from "react-icons/bs";
 
-export default function CreateCollectionUI({
-  onSave,
-  onCancel
-}) {
-  const [newCollectionName, setNewCollectionName] = useState('');
-  const [newCollectionDescription, setNewCollectionDescription] = useState('');
+export default function CreateCollectionUI({ onSave, onCancel }) {
+  const [newCollectionName, setNewCollectionName] = useState("");
+  const [newCollectionDescription, setNewCollectionDescription] = useState("");
+  const [selectedOption, setSelectedOption] = useState("Collection"); // State to track export option
 
   const handleSave = () => {
     // Validate input if needed
@@ -18,23 +16,41 @@ export default function CreateCollectionUI({
     // Call the parent's save function with the collection data
     onSave({
       name: newCollectionName,
-      description: newCollectionDescription
+      description: newCollectionDescription,
     });
 
     // Reset form fields
-    setNewCollectionName('');
-    setNewCollectionDescription('');
+    setNewCollectionName("");
+    setNewCollectionDescription("");
   };
 
   return (
     <div>
       {/* Collection Name */}
-      <div className="flex p-2">
-        <p className="text-2xl ml-auto">
-          {/* TODO: Import collection */}
-          <BsCloudUpload title="Import collection" />
-        </p>
+
+      {/* Dropdown and Export Button Container */}
+      <div className="flex space-x-2 mb-4">
+        {/* Dropdown */}
+        <select
+          className="form-select block w-48 px-3 py-2 border border-gray-300 rounded-md focus:outline-none ml-auto"
+          value={selectedOption}
+          onChange={(e) => setSelectedOption(e.target.value)}
+          aria-label="Select Export Option"
+        >
+          <option value="Collection" selected>
+            Import Collection
+          </option>
+        </select>
+
+        {/* Export Button */}
+        <button
+          // onClick={() => handleExport(activeTab.data.collection._id)}
+          className="bg-[#FF6C37] text-white px-4 py-2 rounded-md hover:bg-[#ff5719] flex items-center space-x-2 cursor-pointer"
+        >
+          <BsCloudUpload className="text-xl" />
+        </button>
       </div>
+
       <div className="mb-4">
         <input
           type="text"

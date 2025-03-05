@@ -291,7 +291,7 @@ export default function RequestUI({
           type="text"
           value={requestName}
           onChange={handleRequestNameChange}
-          className=" px-4 py-2 border border-gray-200 rounded-md"
+          className=" px-4 py-2 border border-gray-200 rounded-md focus:outline-none"
         />
 
         <button

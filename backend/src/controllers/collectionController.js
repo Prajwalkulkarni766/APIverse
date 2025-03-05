@@ -120,49 +120,6 @@ const deleteCollection = async (req, res) => {
   }
 };
 
-// Export the collection
-const exportCollection = async (req, res) => {
-  const { collectionId } = req.params;
-
-  try {
-    const collection = await Collection.findById(collectionId);
-
-    if (!collection) {
-      return res.status(404).json({ message: "Collection not found" });
-    }
-
-    res.setHeader("Content-Type", "application/json");
-    res.setHeader("Content-Disposition", `attachment; filename=${collection.name}.json`);
-    res.status(200).send(JSON.stringify(collection));
-  } catch (err) {
-    res.status(500).json({ message: "Failed to export collection", error: err.message });
-  }
-};
-
-// Import the collection
-const importCollection = async (req, res) => {
-  try {
-    const fileData = JSON.parse(req.file.buffer.toString());
-    const { name, description, requests } = fileData;
-
-    if (!name || !requests) {
-      return res.status(400).json({ message: "Invalid collection format" });
-    }
-
-    const newCollection = new Collection({
-      userId: req.user.id,
-      name,
-      description,
-      requests,
-    });
-
-    await newCollection.save();
-    res.status(201).json(newCollection);
-  } catch (err) {
-    res.status(500).json({ message: "Failed to import collection", error: err.message });
-  }
-};
-
 const duplicateCollection = async (req, res) => {
   const { collectionId } = req.params;
 
@@ -271,4 +228,4 @@ const updateTheCollection = async(req, res) => {
   }
 }
 
-module.exports = { createCollection, getCollections, addRequestToCollection, deleteCollection, exportCollection, importCollection, duplicateCollection, shareCollection, searchAndFilterCollections, getCollectionsName, getCollectionById, getCollectionRequestName, updateTheCollection };
+module.exports = { createCollection, getCollections, addRequestToCollection, deleteCollection, duplicateCollection, shareCollection, searchAndFilterCollections, getCollectionsName, getCollectionById, getCollectionRequestName, updateTheCollection };

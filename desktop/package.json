@@ -4,37 +4,16 @@
   "main": "main.js",
   "scripts": {
     "start": "electron .",
-    "build": "electron-builder"
+    "build": ""
   },
   "author": "",
   "license": "ISC",
   "description": "",
   "dependencies": {
-    "electron": "^34.2.0",
     "electron-is-dev": "^3.0.1"
   },
   "devDependencies": {
+    "electron": "^35.0.0",
     "electron-builder": "^25.1.8"
-  },
-  "build": {
-    "appId": "com.example.app",
-    "productName": "YourAppName",
-    "directories": {
-      "output": "dist"
-    },
-    "files": [
-      "main.js",
-      "preload.js",
-      "dist/**/*"
-    ],
-    "win": {
-      "target": "nsis"
-    },
-    "mac": {
-      "target": "dmg"
-    },
-    "linux": {
-      "target": "AppImage"
-    }
   }
 }

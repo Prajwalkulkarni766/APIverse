@@ -1,5 +1,6 @@
 const { app, BrowserWindow } = require("electron");
 const path = require("path");
+const isDev = require("electron-is-dev");
 
 const createWindow = () => {
   const win = new BrowserWindow({
@@ -14,8 +15,11 @@ const createWindow = () => {
   });
 
   // Load your webpage
-  win.loadURL("http://localhost:5173/");
+  // if(isDev){
+    // win.loadURL("http://localhost:5173/");
+  // }
   // win.loadFile(path.join(__dirname, "dist", "index.html"));
+  win.loadFile("index.html")
 
   // Optionally show window after it's ready
   win.once('ready-to-show', () => {

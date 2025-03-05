@@ -4,7 +4,7 @@ import RequestUI from "../components/RequestUI";
 import CreateCollectionUI from "../components/CreateCollectionUI";
 import TabItem from "../components/TabItem";
 // import { BsArrowClockwise } from "react-icons/bs";
-import { BsCloudDownload } from "react-icons/bs";
+import { BsCloudDownload, BsDownload } from "react-icons/bs";
 import { BsPencil } from "react-icons/bs";
 
 export default function Home() {
@@ -19,6 +19,7 @@ export default function Home() {
   const [tabs, setTabs] = useState([]); // State to manage tabs
   const [activeTabId, setActiveTabId] = useState(null); // State to track active tab
   const [isCreatingCollection, setIsCreatingCollection] = useState(false);
+  const [selectedOption, setSelectedOption] = useState("Collection"); // State to track export option
 
   // Fetch collections
   const fetchCollections = async () => {
@@ -288,6 +289,45 @@ export default function Home() {
     setActiveTabId(`request-${_id}`); // Ensure the active tab stays active
   };
 
+  // Export the data
+  const handleExport = async (collectionId) => {
+    try {
+      let url = ""; // Initialize the URL variable
+
+      // Check the selectedOption state and set the URL accordingly
+      if (selectedOption === "Collection") {
+        url = `/export/collection/${collectionId}`;
+      } else if (selectedOption === "Requests") {
+        url = `export/request/${collectionId}`;
+      } else if (selectedOption === "Both") {
+        url = `/export/both/${collectionId}`;
+      }
+
+      if (!url) {
+        console.error("Invalid option selected for export");
+        return;
+      }
+
+      // Send the API request to the determined URL
+      const response = await axiosInstance.get(url, { responseType: "blob" });
+
+      // Create a Blob from the response data
+      const blob = new Blob([response.data], { type: "application/json" });
+
+      let fileName = Math.floor(Math.random() * 1000000);
+      fileName += "-" + new Date().toISOString();
+      fileName = fileName.replace(".", "-");
+
+      // Create a link element to trigger the download
+      const link = document.createElement("a");
+      link.href = URL.createObjectURL(blob);
+      link.download = `${fileName}.json`;
+      link.click();
+    } catch (error) {
+      console.error("Error exporting data", error);
+    }
+  };
+
   return (
     <div className="flex h-screen bg-gray-50">
       {/* Left Sidebar */}
@@ -343,12 +383,33 @@ export default function Home() {
           {/* Active Tab Content */}
           {activeTab && activeTab.type === "collection" && (
             <div>
-              <div className="flex items-center gap-4 p-2 text-2xl">
-                {/* TODO: Export collection */}
-                <p className="ml-auto">
-                  <BsCloudDownload title="Export collection" />
-                </p>
+              <div className="flex flex-col items-center p-4">
+                {/* Dropdown and Export Button Container */}
+                <div className="flex ml-auto space-x-2">
+                  {/* Dropdown */}
+                  <select
+                    className="form-select block w-48 px-3 py-2 border border-gray-300 rounded-md focus:outline-none"
+                    value={selectedOption}
+                    onChange={(e) => setSelectedOption(e.target.value)}
+                    aria-label="Select Export Option"
+                  >
+                    <option value="Collection" selected>
+                      Export Collection
+                    </option>
+                    <option value="Requests">Export Requests</option>
+                    <option value="Both">Export Both</option>
+                  </select>
+
+                  {/* Export Button */}
+                  <button
+                    onClick={() => handleExport(activeTab.data.collection._id)}
+                    className="bg-[#FF6C37] text-white px-4 py-2 rounded-md hover:bg-[#ff5719] flex items-center space-x-2 cursor-pointer"
+                  >
+                    <BsCloudDownload className="text-xl" />
+                  </button>
+                </div>
               </div>
+
               {/* Collection Name */}
               <div className="mb-4">
                 {activeTab.isEditing ? (
