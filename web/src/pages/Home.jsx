@@ -4,6 +4,8 @@ import RequestUI from "../components/RequestUI";
 import CreateCollectionUI from "../components/CreateCollectionUI";
 import TabItem from "../components/TabItem";
 // import { BsArrowClockwise } from "react-icons/bs";
+import { BsCloudDownload } from "react-icons/bs";
+import { BsPencil } from "react-icons/bs";
 
 export default function Home() {
   const [showMethodDropdown, setShowMethodDropdown] = useState(false);
@@ -175,12 +177,29 @@ export default function Home() {
     collection.name.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
+  // Handle creating a new collection and adding it as a tab
+  const handleCreateNewCollectionTab = () => {
+    const newTab = {
+      id: "create-collection", // Unique ID for the creation tab
+      type: "create-collection",
+      label: "Create New Collection", // Tab label
+    };
+
+    // Add a new tab for creating a collection
+    setTabs((prevTabs) => [...prevTabs, newTab]);
+    setActiveTabId(newTab.id); // Set this tab as active
+    setIsCreatingCollection(true); // Show the create collection form
+  };
+
   // Handle creating a new collection
   const handleSaveNewCollection = async (collectionData) => {
     try {
       await axiosInstance.post("/collections", collectionData);
       setIsCreatingCollection(false);
       fetchCollections();
+      setTabs((prevTabs) =>
+        prevTabs.filter((tab) => tab.id !== "create-collection")
+      ); // Remove the "Create Collection" tab
     } catch (error) {
       console.error("Error creating new collection", error);
     }
@@ -189,6 +208,9 @@ export default function Home() {
   // Handle canceling collection creation
   const handleCancelCollection = () => {
     setIsCreatingCollection(false);
+    setTabs((prevTabs) =>
+      prevTabs.filter((tab) => tab.id !== "create-collection")
+    ); // Remove the "Create Collection" tab
   };
 
   // Fetch collections on mount
@@ -281,7 +303,7 @@ export default function Home() {
             />
             <button
               className="cursor-pointer w-full mt-4 px-6 py-2 bg-[#FF6C37] text-white rounded-md hover:bg-[#ff5719]"
-              onClick={() => setIsCreatingCollection(true)}
+              onClick={handleCreateNewCollectionTab}
             >
               Add New Collection
             </button>
@@ -321,6 +343,12 @@ export default function Home() {
           {/* Active Tab Content */}
           {activeTab && activeTab.type === "collection" && (
             <div>
+              <div className="flex items-center gap-4 p-2 text-2xl">
+                {/* TODO: Export collection */}
+                <p className="ml-auto">
+                  <BsCloudDownload title="Export collection" />
+                </p>
+              </div>
               {/* Collection Name */}
               <div className="mb-4">
                 {activeTab.isEditing ? (
@@ -464,6 +492,7 @@ export default function Home() {
             />
           )}
 
+          {/*  */}
           {/* Create Collection UI */}
           {isCreatingCollection && (
             <CreateCollectionUI

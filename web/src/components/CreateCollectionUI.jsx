@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { BsCloudUpload } from "react-icons/bs";
 
 export default function CreateCollectionUI({
   onSave,
@@ -28,6 +29,12 @@ export default function CreateCollectionUI({
   return (
     <div>
       {/* Collection Name */}
+      <div className="flex p-2">
+        <p className="text-2xl ml-auto">
+          {/* TODO: Import collection */}
+          <BsCloudUpload title="Import collection" />
+        </p>
+      </div>
       <div className="mb-4">
         <input
           type="text"
