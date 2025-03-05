@@ -1,4 +1,5 @@
 const Collection = require("../models/Collection");
+const Request  = require("../models/Request");
 
 // Create a new collection
 const createCollection = async (req, res) => {
@@ -50,7 +51,8 @@ const getCollectionById = async (req, res) => {
 
   try {
     const collection = await Collection.findById(collectionId);
-    res.status(200).json(collection);
+    const requests = await Request.find({ collectionId: collection._id })
+    res.status(200).json({collection, requests});
   } catch (err) {
     res.status(500).json({ message: "Failed to fetch collection", error: err.message });
   }

@@ -1,184 +1,270 @@
-import { useState, useEffect } from 'react';
-import axiosInstance from '../axios/axiosInstance';
-import RequestUI from '../components/RequestUI';
-import CreateCollectionUI from '../components/CreateCollectionUI';
-import SelectedCollectionUI from '../components/SelectedCollectionUI';
-
-// Create a new type for our tabs
-const TabItem = ({ id, label, active, onClick }) => (
-  <button
-    className={`px-4 py-2 -mb-px border-b-2 ${active
-      ? 'border-[#FF6C37] text-[#FF6C37]'
-      : 'border-transparent text-gray-500 hover:text-gray-700'
-      }`}
-    onClick={() => onClick(id)}
-  >
-    <div className="flex items-center gap-2">
-      {label}
-      {/* Add close button if needed */}
-      <span
-        className="ml-2 text-xs text-gray-400 hover:text-gray-600"
-        onClick={(e) => {
-          e.stopPropagation();
-          // Handle close
-        }}
-      >
-        ×
-      </span>
-    </div>
-  </button>
-);
+import { useState, useEffect } from "react";
+import axiosInstance from "../axios/axiosInstance";
+import RequestUI from "../components/RequestUI";
+import CreateCollectionUI from "../components/CreateCollectionUI";
+import TabItem from "../components/TabItem";
+// import { BsArrowClockwise } from "react-icons/bs";
 
 export default function Home() {
-  // const [method, setMethod] = useState('GET');
-  // const [url, setUrl] = useState('');
-  // const [activeTab, setActiveTab] = useState('Authorization');
-  // const [bodyType, setBodyType] = useState('none');
   const [showMethodDropdown, setShowMethodDropdown] = useState(false);
-  const [showSaveDropdown, setShowSaveDropdown] = useState(false);
+  const [showAuthDropdown, setShowAuthDropdown] = useState(false);
   const [collections, setCollections] = useState([]);
-  const [searchTerm, setSearchTerm] = useState('');
+  const [searchTerm, setSearchTerm] = useState("");
   const [selectedCollection, setSelectedCollection] = useState(null);
-  const [showApiRequestUI, setShowApiRequestUI] = useState(false);
   const [openDropdownId, setOpenDropdownId] = useState(null);
-  // const [selectedCollectionRequests, setSelectedCollectionRequests] = useState([]);
-  const [collectionName, setCollectionName] = useState('');
-  const [collectionDescription, setCollectionDescription] = useState('');
-  const [isEditing, setIsEditing] = useState(false);
-  const [selectedRequest, setSelectedRequest] = useState(null);
-  const [tabs, setTabs] = useState([]);
-  const [activeTabId, setActiveTabId] = useState(null);
+  const [collectionName, setCollectionName] = useState("");
+  const [collectionDescription, setCollectionDescription] = useState("");
+  const [tabs, setTabs] = useState([]); // State to manage tabs
+  const [activeTabId, setActiveTabId] = useState(null); // State to track active tab
   const [isCreatingCollection, setIsCreatingCollection] = useState(false);
-  // const [newCollectionName, setNewCollectionName] = useState('');
-  // const [newCollectionDescription, setNewCollectionDescription] = useState('');
-
-
-  // const methods = ['GET', 'POST', 'PUT', 'DELETE', 'PATCH'];
-  // const saveOptions = ['Save', 'Save As', 'Save to Collection'];
-
-  // Function to add a new tab
-  const addTab = (type, data) => {
-    const newTab = {
-      id: `${type}-${Date.now()}`,
-      type,
-      data,
-      label: type === 'collection' ? data.name : `${data.method} ${data.name}`
-    };
-
-    setTabs(prevTabs => [...prevTabs, newTab]);
-    setActiveTabId(newTab.id);
-  };
 
   // Fetch collections
   const fetchCollections = async () => {
     try {
-      const response = await axiosInstance.get('/collections/collection-name');
+      const response = await axiosInstance.get("/collections/collection-name");
       setCollections(response.data);
     } catch (error) {
-      console.error('Error fetching collections', error);
+      console.error("Error fetching collections", error);
     }
   };
 
-  // To handle request click
-  const handleRequestClick = (request) => {
-    setSelectedRequest(request); // Set the selected request
-    setShowApiRequestUI(true);   // Show the request UI
+  // Handle request click - Updated to create a new tab
+  const handleRequestClick = (request, collectionId) => {
+    const newTab = {
+      id: `request-${request._id || Date.now()}`, // Unique ID for the tab
+      type: "request",
+      data: request,
+      label: request.name || `${request.method} Request`, // Tab label
+      collectionId: collectionId, // Store the parent collection ID for context
+    };
+
+    // Check if the tab already exists
+    const existingTab = tabs.find((tab) => tab.id === newTab.id);
+    if (!existingTab) {
+      setTabs((prevTabs) => [...prevTabs, newTab]); // Add new tab
+    }
+    setActiveTabId(newTab.id); // Set the new tab as active
   };
 
-
-  // Fetch selected collection details
+  // Fetch collection details
   const fetchCollectionDetails = async (id) => {
     try {
       const response = await axiosInstance.get(`/collections/${id}`);
-      setSelectedCollection(response.data);
-      setCollectionName(response.data.name); // Set name in state
-      setCollectionDescription(response.data.description); // Set description in state
+      return response.data; // Return the fetched collection
     } catch (error) {
-      console.error('Error fetching collection details', error);
+      console.error("Error fetching collection details", error);
     }
   };
 
-  // Save changes to the collection
+  // Handle tab close
+  const handleTabClose = (id) => {
+    setTabs((prevTabs) => prevTabs.filter((tab) => tab.id !== id)); // Remove the tab
+    if (activeTabId === id) {
+      // Switch to another tab if available
+      if (tabs.length > 1) {
+        const otherTabs = tabs.filter((tab) => tab.id !== id);
+        setActiveTabId(otherTabs[0].id);
+
+        // If the active tab is a collection, sync its data
+        const nextTab = otherTabs[0];
+        if (nextTab.type === "collection") {
+          setCollectionName(nextTab.data.name);
+          setCollectionDescription(nextTab.data.description);
+        }
+      } else {
+        setActiveTabId(null);
+      }
+    }
+  };
+
+  // Handle collection click (add a new tab)
+  const handleCollectionClick = async (id) => {
+    const collection = await fetchCollectionDetails(id);
+
+    if (collection) {
+      const newTab = {
+        id: `collection-${id}`, // Unique ID for the tab
+        type: "collection",
+        data: collection, // The response is now the entire collection object
+        label: collection.collection.name, // Tab label
+        isEditing: false, // Track editing state per tab
+      };
+
+      // Check if the tab already exists
+      const existingTab = tabs.find((tab) => tab.id === newTab.id);
+      if (!existingTab) {
+        setTabs((prevTabs) => [...prevTabs, newTab]); // Add new tab
+      }
+      setActiveTabId(newTab.id); // Set the new tab as active
+      setCollectionName(collection.collection.name); // Sync collection name
+      setCollectionDescription(collection.collection.description); // Sync collection description
+    }
+  };
+
+  // Handle tab switch
+  const handleTabSwitch = (id) => {
+    setActiveTabId(id); // Set the clicked tab as active
+    const activeTab = tabs.find((tab) => tab.id === id);
+
+    // Ensure we are syncing the values with the active tab
+    if (activeTab && activeTab.type === "collection") {
+      setCollectionName(activeTab.data.collection.name); // Sync collection name from active tab
+      setCollectionDescription(activeTab.data.collection.description); // Sync collection description from active tab
+    }
+  };
+
+  // Get the active tab's data
+  const activeTab = tabs.find((tab) => tab.id === activeTabId);
+
   const handleSaveChanges = async () => {
     try {
       const updatedCollection = {
         name: collectionName,
         description: collectionDescription,
       };
-      await axiosInstance.put(`/collections/${selectedCollection._id}`, updatedCollection);
-      setIsEditing(false);
-      fetchCollectionDetails(selectedCollection._id);
-      fetchCollections();
+
+      // Save the updated collection
+      await axiosInstance.put(
+        `/collections/${activeTab.data.collection._id}`,
+        updatedCollection
+      );
+
+      // Update the tab's data and disable editing
+      setTabs((prevTabs) =>
+        prevTabs.map((tab) =>
+          tab.id === activeTabId
+            ? {
+                ...tab,
+                data: {
+                  ...tab.data,
+                  collection: {
+                    ...tab.data.collection,
+                    name: collectionName,
+                    description: collectionDescription,
+                  },
+                },
+                label: collectionName, // Update the tab label
+                isEditing: false,
+              }
+            : tab
+        )
+      );
+
+      // Update the collections state (left sidebar)
+      setCollections((prevCollections) =>
+        prevCollections.map((collection) =>
+          collection._id === activeTab.data.collection._id
+            ? {
+                ...collection,
+                name: collectionName,
+                description: collectionDescription,
+              }
+            : collection
+        )
+      );
+
+      // Force update active tab UI
+      setActiveTabId(activeTabId); // Trigger a re-render of the active tab
     } catch (error) {
-      console.error('Error saving collection changes', error);
+      console.error("Error saving collection changes", error);
     }
   };
 
-  // Fetch collection requests with methods
-  // const fetchCollectionRequests = async (id) => {
-  //   try {
-  //     const response = await axiosInstance.get(`/collections/collection-request-name/${id}`);
-  //     setSelectedCollectionRequests(response.data);
-  //   } catch (error) {
-  //     console.error('Error fetching collection requests', error);
-  //   }
-  // };
-
-  // Handle collection click (fetch details for the selected collection)
-  // const handleCollectionClick = (id) => {
-  //   fetchCollectionDetails(id);
-  //   setShowApiRequestUI(false);
-  //   setOpenDropdownId(null); // Close the dropdown when a collection is clicked
-  // };
-
-  // Modified click handlers
-  const handleCollectionClick = (id) => {
-    fetchCollectionDetails(id).then(() => {
-      if (selectedCollection) {
-        addTab('collection', selectedCollection);
-      }
-    });
-    setShowApiRequestUI(false);
-  };
-
-  // Handle dropdown toggle
-  // const handleDropdownToggle = (id) => {
-  //   if (openDropdownId === id) {
-  //     setOpenDropdownId(null); // Close the dropdown if it's already open
-  //   } else {
-  //     setOpenDropdownId(id); // Open dropdown for the clicked collection
-  //     fetchCollectionRequests(id); // Fetch requests when dropdown is opened
-  //   }
-  // };
-
   // Filter collections based on search term
-  const filteredCollections = collections.filter(collection =>
+  const filteredCollections = collections.filter((collection) =>
     collection.name.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
+  // Handle creating a new collection
   const handleSaveNewCollection = async (collectionData) => {
     try {
-      // Send a POST request to create a new collection
-      await axiosInstance.post('/collections', collectionData);
-
-      // Hide the form
+      await axiosInstance.post("/collections", collectionData);
       setIsCreatingCollection(false);
-
-      // Refetch collections
       fetchCollections();
     } catch (error) {
-      console.error('Error creating new collection', error);
+      console.error("Error creating new collection", error);
     }
   };
 
+  // Handle canceling collection creation
   const handleCancelCollection = () => {
     setIsCreatingCollection(false);
   };
 
-
+  // Fetch collections on mount
   useEffect(() => {
     fetchCollections();
-  }, []); // Fetch collections on mount
+  }, []);
+
+  // Add new request to collection
+  const handleAddNewRequest = async () => {
+    try {
+      // Call the API to create a blank request
+      const response = await axiosInstance.post(
+        `/requests/${activeTab.data.collection._id}`
+      );
+
+      // Create a new tab with the received request data
+      const newRequest = response.data;
+
+      const newTab = {
+        id: `request-${newRequest._id}`,
+        type: "request",
+        data: newRequest,
+        label: newRequest.name || `${newRequest.method} Request`,
+        collectionId: activeTab.data.collection._id, // Assuming you want it in the current collection
+      };
+
+      const existingTab = tabs.find((tab) => tab.id === newTab.id);
+      if (!existingTab) {
+        setTabs((prevTabs) => [...prevTabs, newTab]); // Add new tab
+      }
+      setActiveTabId(newTab.id); // Set the new tab as active
+    } catch (error) {
+      console.error("Error creating blank request", error);
+    }
+  };
+
+  // Delete request from collection
+  const handleDeleteRequest = async (requestId) => {
+    try {
+      // Sending request to delete
+      await axiosInstance.delete(`/requests/${requestId}`);
+
+      // Remove the deleted request from the collection's list
+      setTabs((prevTabs) =>
+        prevTabs.map((tab) =>
+          tab.id === activeTabId
+            ? {
+                ...tab,
+                data: {
+                  ...tab.data,
+                  requests: tab.data.requests.filter(
+                    (request) => request._id !== requestId
+                  ),
+                },
+              }
+            : tab
+        )
+      );
+    } catch (error) {
+      console.error("Error deleting request", error);
+    }
+  };
+
+  // Updating request name
+  const handleUpdateRequestName = async (id, name) => {
+    // Once the API responds successfully, update the tab label
+    setTabs((prevTabs) =>
+      prevTabs.map((tab) =>
+        tab.id === `request-${id}`
+          ? { ...tab, label: name } // Update the tab label
+          : tab
+      )
+    );
+
+    setActiveTabId(`request-${_id}`); // Ensure the active tab stays active
+  };
 
   return (
     <div className="flex h-screen bg-gray-50">
@@ -194,207 +280,198 @@ export default function Home() {
               className="w-full px-4 py-2 border border-gray-200 rounded-md"
             />
             <button
-              className="w-full mt-4 px-6 py-2 bg-[#FF6C37] text-white rounded-md hover:bg-[#ff5719]"
+              className="cursor-pointer w-full mt-4 px-6 py-2 bg-[#FF6C37] text-white rounded-md hover:bg-[#ff5719]"
               onClick={() => setIsCreatingCollection(true)}
             >
               Add New Collection
             </button>
           </div>
         </div>
-        {/* h-[calc(100vh-100px)] */}
-        <div className=" overflow-y-auto">
-          {/* Collection List with Dropdown Icons */}
+        <div className="overflow-y-auto">
+          {/* Collection List */}
           {filteredCollections.map((collection) => (
             <div
               key={collection._id}
               className="flex items-center space-x-2 cursor-pointer p-2 hover:bg-gray-100"
               onClick={() => handleCollectionClick(collection._id)}
             >
-              {/*
-              <span
-                onClick={() => handleDropdownToggle(collection._id)}
-                className={`transition-transform ${openDropdownId === collection._id ? 'rotate-180' : ''}`}
-              >
-                ▼
-              </span> */}
               <span>{collection.name}</span>
-
-              {/* {openDropdownId === collection._id && selectedCollectionRequests.length > 0 && (
-                <ul className="mt-2 ml-4">
-                  {selectedCollectionRequests.map((req, index) => (
-                    <li key={index} className="mb-2">
-                      <span>{req.name}</span> - <span>{req.method}</span>
-                    </li>
-                  ))}
-                </ul>
-              )} */}
             </div>
           ))}
         </div>
       </div>
 
       {/* Main Content */}
-      <div className="flex-1 p-6 overflow-y-auto">
-        {/* Right-Hand Side UI */}
-        {/* {selectedCollection && !openDropdownId && (
-          <div>
-            <h2 className="text-xl font-semibold mb-4">{selectedCollection.name}</h2>
-            <p className="mb-4">{selectedCollection.description}</p>
+      <div className="flex-1 overflow-y-auto">
+        {/* Tab Bar */}
+        <div className="flex border-b border-gray-200 mb-4 h-max-[47px]">
+          {tabs.map((tab) => (
+            <TabItem
+              key={tab.id}
+              id={tab.id}
+              label={tab.label}
+              active={activeTabId === tab.id}
+              onClick={handleTabSwitch}
+              onClose={handleTabClose}
+            />
+          ))}
+        </div>
 
-            <h3 className="text-lg font-semibold mb-2">Requests</h3>
-            {selectedCollection.requests && selectedCollection.requests.length === 0 ? (
-              <p>No requests found for this collection.</p>
-            ) : (
-              <ul>
-                {selectedCollection.requests.map((req, index) => (
-                  <li key={index} className="mb-2 p-3 bg-gray-300 rounded-lg">
-                    <span>{req.method}</span> - <span>{req.name}</span>
-                  </li>
-                ))}
-              </ul>
-            )}
-
-            <div className="mt-4">
-              <strong>Shared With:</strong>
-              <ul>
-                {selectedCollection?.sharedWith.length > 0 ? (
-                  selectedCollection?.sharedWith.map((user, idx) => (
-                    <li key={idx}>{user}</li>
-                  ))
+        <div className="px-6">
+          {/* Active Tab Content */}
+          {activeTab && activeTab.type === "collection" && (
+            <div>
+              {/* Collection Name */}
+              <div className="mb-4">
+                {activeTab.isEditing ? (
+                  <input
+                    type="text"
+                    value={collectionName}
+                    onChange={(e) => setCollectionName(e.target.value)}
+                    className="w-full px-4 py-2 border border-gray-200 rounded-md"
+                  />
                 ) : (
-                  <p>No users have access to this collection.</p>
+                  <h2 className="text-xl font-semibold mb-4">
+                    {activeTab.data.collection.name}
+                  </h2>
                 )}
-              </ul>
-            </div>
-          </div>
-        )} */}
-
-        {isCreatingCollection && (
-          <CreateCollectionUI
-            onSave={handleSaveNewCollection}
-            onCancel={handleCancelCollection}
-          />
-        )}
-
-        {/* {selectedCollection && !openDropdownId && (
-          <SelectedCollectionUI
-            collection={selectedCollection}
-            onSave={handleSaveChanges}
-            onEdit={() => setIsEditing(!isEditing)}
-            isEditing={isEditing}
-            onRequestClick={handleRequestClick}
-          />
-        )} */}
-
-
-        {selectedCollection && !openDropdownId && (
-          <div>
-            {/* Collection Name */}
-            <div className="mb-4">
-              {isEditing ? (
-                <input
-                  type="text"
-                  value={collectionName}
-                  onChange={(e) => setCollectionName(e.target.value)}
-                  className="w-full px-4 py-2 border border-gray-200 rounded-md"
-                />
-              ) : (
-                <h2 className="text-xl font-semibold mb-4">{collectionName}</h2>
-              )}
-            </div>
-
-            {/* Collection Description */}
-            <div className="mb-4">
-              {isEditing ? (
-                <textarea
-                  value={collectionDescription}
-                  onChange={(e) => setCollectionDescription(e.target.value)}
-                  className="w-full h-48 p-4 border border-gray-200 rounded-md"
-                />
-              ) : (
-                <p className="mb-4">{collectionDescription}</p>
-              )}
-            </div>
-
-            {/* Display Requests */}
-            <h3 className="text-lg font-semibold mb-2">Requests</h3>
-            {selectedCollection.requests && selectedCollection.requests.length === 0 ? (
-              <p>No requests found for this collection.</p>
-            ) : (
-              <ul>
-                {selectedCollection.requests.map((req, index) => (
-                  <li
-                    key={index}
-                    className="mb-2 p-3 bg-gray-300 rounded-lg"
-                    onClick={() => handleRequestClick(req)}
-                  >
-                    <span>{req.method}</span> - <span>{req.name}</span>
-                  </li>
-                ))}
-              </ul>
-            )}
-
-            {/* Additional details (e.g., shared users, etc.) */}
-            <div className="mt-4">
-              <strong>Shared With:</strong>
-              <ul>
-                {selectedCollection?.sharedWith.length > 0 ? (
-                  selectedCollection?.sharedWith.map((user, idx) => (
-                    <li key={idx}>{user}</li>
-                  ))
-                ) : (
-                  <p>No users have access to this collection.</p>
-                )}
-              </ul>
-            </div>
-
-            {/* Save Changes Button */}
-            {isEditing && (
-              <div className='flex gap-2'>
-                <button
-                  onClick={handleSaveChanges}
-                  className="mt-4 px-6 py-2 bg-[#FF6C37] text-white rounded-md hover:bg-[#ff5719]"
-                >
-                  Save Changes
-                </button>
-                <button
-                  className="mt-4 px-6 py-2 bg-[#FF6C37] text-white rounded-md hover:bg-[#ff5719]"
-                  onClick={() => {
-                    // Reset to original values
-                    setCollectionName(selectedCollection.name);
-                    setCollectionDescription(selectedCollection.description);
-                    // Exit editing mode
-                    setIsEditing(false);
-                  }}
-                >
-                  Cancel
-                </button>
               </div>
-            )}
 
-            {/* Edit Button */}
-            {!isEditing && (
-              <button
-                onClick={() => setIsEditing(true)}
-                className="mt-4 px-6 py-2 bg-[#FF6C37] text-white rounded-md hover:bg-[#ff5719]"
-              >
-                Edit
-              </button>
-            )}
-          </div>
-        )}
+              {/* Collection Description */}
+              <div className="mb-4">
+                {activeTab.isEditing ? (
+                  <textarea
+                    value={collectionDescription}
+                    onChange={(e) => setCollectionDescription(e.target.value)}
+                    className="w-full h-48 p-4 border border-gray-200 rounded-md"
+                  />
+                ) : (
+                  <p className="mb-4">
+                    {activeTab.data.collection.description}
+                  </p>
+                )}
+              </div>
 
+              {/* Display Requests */}
+              <div className="flex">
+                <h3 className="text-lg font-semibold mb-2">Requests</h3>
+                {/* To add new request */}
+                <p
+                  onClick={handleAddNewRequest}
+                  className="cursor-pointer text-[#FF6C37] underline ml-auto"
+                >
+                  Add New Request
+                </p>
+              </div>
+              {activeTab &&
+              activeTab.data.requests &&
+              activeTab.data.requests.length === 0 ? (
+                <p>No requests found for this collection.</p>
+              ) : (
+                <ul>
+                  {activeTab.data.requests.map((req, index) => (
+                    <li
+                      key={index}
+                      className="mb-2 p-3 bg-gray-300 rounded-lg cursor-pointer hover:bg-gray-400"
+                      onClick={() => {
+                        if (!activeTab.isEditing) {
+                          handleRequestClick(
+                            req,
+                            activeTab.data.collection._id
+                          );
+                        }
+                      }}
+                    >
+                      <div className="flex justify-between">
+                        <span>{req.method}</span> - <span>{req.name}</span>
+                        {activeTab.isEditing && (
+                          <button
+                            onClick={() => handleDeleteRequest(req._id)}
+                            className="text-red-500 hover:text-red-700 cursor-pointer"
+                          >
+                            Delete
+                          </button>
+                        )}
+                      </div>
+                    </li>
+                  ))}
+                </ul>
+              )}
 
-        {showApiRequestUI && selectedRequest && (
-          <RequestUI
-            selectedRequest={selectedRequest}
-            showMethodDropdown={showMethodDropdown}
-            setShowMethodDropdown={setShowMethodDropdown}
-            showSaveDropdown={showSaveDropdown}
-            setShowSaveDropdown={setShowSaveDropdown}
-          />
-        )}
+              {/* Save Changes Button */}
+              {activeTab.isEditing && (
+                <div className="flex gap-2">
+                  <button
+                    onClick={handleSaveChanges}
+                    className="cursor-pointer mt-4 px-6 py-2 bg-[#FF6C37] text-white rounded-md hover:bg-[#ff5719]"
+                  >
+                    Save Changes
+                  </button>
+                  <button
+                    onClick={() => {
+                      setCollectionName(activeTab.data.collection.name);
+                      setCollectionDescription(
+                        activeTab.data.collection.description
+                      );
+                      setTabs((prevTabs) =>
+                        prevTabs.map((tab) =>
+                          tab.id === activeTabId
+                            ? { ...tab, isEditing: false }
+                            : tab
+                        )
+                      );
+                    }}
+                    className="cursor-pointer mt-4 px-6 py-2 border b-[#FF6C37] text-[#FF6C37] rounded-md hover:b-[#ff5719]"
+                  >
+                    Cancel
+                  </button>
+                </div>
+              )}
 
+              {/* Edit Button */}
+              {!activeTab.isEditing && (
+                <button
+                  onClick={() => {
+                    setTabs((prevTabs) =>
+                      prevTabs.map((tab) =>
+                        tab.id === activeTabId
+                          ? { ...tab, isEditing: true }
+                          : tab
+                      )
+                    );
+                    setCollectionName(activeTab.data.collection.name);
+                    setCollectionDescription(
+                      activeTab.data.collection.description
+                    );
+                  }}
+                  className="cursor-pointer mt-4 px-6 py-2 bg-[#FF6C37] text-white rounded-md hover:bg-[#ff5719]"
+                >
+                  Edit
+                </button>
+              )}
+            </div>
+          )}
+
+          {/* Request Tab Content */}
+          {activeTab && activeTab.type === "request" && (
+            <RequestUI
+              selectedRequest={activeTab.data}
+              showMethodDropdown={showMethodDropdown}
+              setShowMethodDropdown={setShowMethodDropdown}
+              showAuthDropdown={showAuthDropdown}
+              setShowAuthDropdown={setShowAuthDropdown}
+              handleUpdateRequestName={handleUpdateRequestName}
+            />
+          )}
+
+          {/* Create Collection UI */}
+          {isCreatingCollection && (
+            <CreateCollectionUI
+              onSave={handleSaveNewCollection}
+              onCancel={handleCancelCollection}
+            />
+          )}
+        </div>
       </div>
     </div>
   );

@@ -121,7 +121,7 @@ export default function EnvironmentManagement() {
   }, []);
 
   return (
-    <div className="flex min-h-screen bg-white">
+    <div className="flex bg-white">
       {/* Left Panel - Environment List */}
       <div className="w-80 border-r border-gray-200 p-6">
         <div className="flex justify-between items-center mb-4">

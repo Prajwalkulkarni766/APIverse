@@ -1,13 +1,12 @@
 import React, { useState } from 'react';
 import axiosInstance from '../axios/axiosInstance';
 
-const SelectedCollectionUI = ({ collection, onSave, onEdit, isEditing }) => {
+const CollectionUI = ({ collection, onSave, onEdit, isEditing }) => {
   const [collectionName, setCollectionName] = useState(collection.name);
   const [collectionDescription, setCollectionDescription] = useState(collection.description);
 
   const handleSaveChanges = async () => {
     try {
-      console.log(updatedCollection)
       const updatedCollection = {
         name: collectionName,
         description: collectionDescription,
@@ -111,4 +110,4 @@ const SelectedCollectionUI = ({ collection, onSave, onEdit, isEditing }) => {
   );
 };
 
-export default SelectedCollectionUI;
+export default CollectionUI;

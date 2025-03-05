@@ -2,8 +2,6 @@ const History = require("../models/History");
 
 const getHistory = async (req, res) => {
   try {
-
-
     const userId = req.user.id;
     const page = parseInt(req.query.page) || 1;  // Default to page 1 if not provided
     const limit = parseInt(req.query.limit) || 10;  // Default to 10 items per page
@@ -92,5 +90,19 @@ const searchHistory = async (req, res) => {
   }
 };
 
+const createHistory = async (req, res) => {
+  try {
+    const historyData = {
+      ...req.body,
+      userId: req.user.id,
+    };
 
-module.exports = { getHistory, deleteHistory, searchHistory, deleteAllHistory };
+    const history = await new History(historyData).save();
+
+    res.status(200).json(history);
+  } catch (err) {
+    res.status(500).json({ message: "Failed to search history", error: err.message });
+  }
+}
+
+module.exports = { getHistory, deleteHistory, searchHistory, deleteAllHistory, createHistory };

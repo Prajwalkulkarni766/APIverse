@@ -11,28 +11,6 @@ const History = () => {
   const [totalPages, setTotalPages] = useState(1);
   const itemsPerPage = 10;
 
-  // const getHistory = async (page = 1) => {
-  //   try {
-  //     setLoading(true);
-  //     const response = await axiosInstance.get("/history", {
-  //       params: {
-  //         page,
-  //         limit: itemsPerPage,
-  //         status: selectedStatus !== 'ALL' ? selectedStatus : undefined,
-  //         method: selectedMethod !== 'ALL' ? selectedMethod : undefined,
-  //         search: searchQuery || undefined,
-  //       }
-  //     });
-  //     setHistoryData((prevData) => [...prevData, ...response.data.history]);
-  //     setTotalPages(Math.ceil((response.data.total || 0) / itemsPerPage));
-  //     setCurrentPage(page);
-  //   } catch (error) {
-  //     console.error(error);
-  //   } finally {
-  //     setLoading(false);
-  //   }
-  // };
-
   const getHistory = async (page = 1, reset = false) => {
     try {
       setLoading(true);
@@ -89,7 +67,7 @@ const History = () => {
   }, [selectedStatus, selectedMethod]);
 
   return (
-    <div className="p-4 bg-white min-h-screen">
+    <div className="p-4 bg-white">
       {/* Header */}
       <div className="mb-6">
         <h1 className="text-2xl font-semibold text-gray-800">History</h1>
