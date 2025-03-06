@@ -26,6 +26,9 @@ export default function SignIn() {
         rememberMe,
       });
       dispatch(setToken(response.data.token));
+      if (rememberMe) {
+        localStorage.setItem("access_token", response.data.token);
+      }
       navigate("/");
     } catch (err) {
       setError("Invalid email or password.");
@@ -62,7 +65,6 @@ export default function SignIn() {
             </label>
             <input
               type="email"
-              placeholder="Enter your email address"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-0 focus:border-orange-500 outline-none"
@@ -76,7 +78,6 @@ export default function SignIn() {
             </label>
             <input
               type="password"
-              placeholder="Enter your password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-0 focus:border-orange-500 outline-none"
@@ -110,7 +111,7 @@ export default function SignIn() {
         {/* Sign Up Link */}
         <div className="text-center mt-4 text-sm">
           <p className="text-gray-600">
-            Don't have an account?
+            Don&apos;t have an account?
             <Link to="/signup" className="text-orange-500 hover:underline ml-1">
               Sign up
             </Link>

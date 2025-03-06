@@ -6,7 +6,9 @@ const initialState = {
 
 const tokenSlice = createSlice({
   name: "token",
-  initialState,
+  initialState: {
+    token: localStorage.getItem("access_token") || null, // Initial token from localStorage
+  },
   reducers: {
     setToken(state, action) {
       state.token = action.payload;

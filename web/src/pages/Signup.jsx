@@ -52,6 +52,7 @@ const Signup = () => {
         termsAccepted: formData.termsAccepted,
       });
       dispatch(setToken(response.data.token));
+      localStorage.setItem("access_token", response.data.token);
       navigate("/");
     } catch (err) {
       setError("An error occurred. Please try again.");

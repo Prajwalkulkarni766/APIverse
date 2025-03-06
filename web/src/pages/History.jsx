@@ -1,16 +1,17 @@
-import React, { useState, useEffect } from 'react';
-import axiosInstance from '../axios/axiosInstance';
+import { useState, useEffect } from "react";
+import axiosInstance from "../axios/axiosInstance";
 
 const History = () => {
-  const [searchQuery, setSearchQuery] = useState('');
-  const [selectedStatus, setSelectedStatus] = useState('ALL');
-  const [selectedMethod, setSelectedMethod] = useState('ALL');
+  const [searchQuery, setSearchQuery] = useState("");
+  const [selectedStatus, setSelectedStatus] = useState("ALL");
+  const [selectedMethod, setSelectedMethod] = useState("ALL");
   const [historyData, setHistoryData] = useState([]);
   const [loading, setLoading] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const itemsPerPage = 10;
 
+  // Fetch history data based on current page and filters
   const getHistory = async (page = 1, reset = false) => {
     try {
       setLoading(true);
@@ -18,13 +19,18 @@ const History = () => {
         params: {
           page,
           limit: itemsPerPage,
-          status: selectedStatus !== 'ALL' ? selectedStatus : undefined,
-          method: selectedMethod !== 'ALL' ? selectedMethod : undefined,
+          status: selectedStatus !== "ALL" ? selectedStatus : undefined,
+          method: selectedMethod !== "ALL" ? selectedMethod : undefined,
           search: searchQuery || undefined,
-        }
+        },
       });
 
-      setHistoryData(reset ? response.data.history : [...historyData, ...response.data.history]);
+      // Update history data
+      setHistoryData(
+        reset
+          ? response.data.history
+          : [...historyData, ...response.data.history]
+      );
       setTotalPages(Math.ceil((response.data.total || 0) / itemsPerPage));
       setCurrentPage(page);
     } catch (error) {
@@ -36,7 +42,7 @@ const History = () => {
 
   const handleSearch = () => {
     setCurrentPage(1);
-    getHistory(1, true);  // Reset history when searching
+    getHistory(1, true); // Reset history when searching
   };
 
   const handleClearHistory = async () => {
@@ -55,15 +61,15 @@ const History = () => {
   };
 
   const formatSize = (bytes) => {
-    if (bytes === 0) return '0 Bytes';
+    if (bytes === 0) return "0 Bytes";
     const k = 1024;
-    const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+    const sizes = ["Bytes", "KB", "MB", "GB"];
     const i = Math.floor(Math.log(bytes) / Math.log(k));
-    return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+    return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + " " + sizes[i];
   };
 
   useEffect(() => {
-    getHistory(1, true);  // Reset history when filters change
+    getHistory(1, true); // Reset history when filters change
   }, [selectedStatus, selectedMethod]);
 
   return (
@@ -81,7 +87,7 @@ const History = () => {
           className="flex-1 px-3 py-2 border border-gray-300 rounded-md"
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
-          onKeyPress={(e) => e.key === 'Enter' && handleSearch()}
+          onKeyPress={(e) => e.key === "Enter" && handleSearch()}
         />
 
         <div className="relative">
@@ -113,14 +119,6 @@ const History = () => {
         </div>
 
         <button
-          className="px-4 py-2 text-[#FF6C37] hover:bg-red-50 rounded-md border border-red-500"
-          onClick={() => getHistory(currentPage + 1)}
-          disabled={currentPage >= totalPages}
-        >
-          Load More
-        </button>
-
-        <button
           className="px-4 py-2 text-red-500 hover:bg-red-50 rounded-md border border-red-500"
           onClick={handleClearHistory}
         >
@@ -145,45 +143,54 @@ const History = () => {
           <tbody>
             {loading && (
               <tr>
-                <td colSpan="7" className="py-8 text-center text-gray-500">Loading...</td>
+                <td colSpan="7" className="py-8 text-center text-gray-500">
+                  Loading...
+                </td>
               </tr>
             )}
             {!loading && historyData.length === 0 && (
               <tr>
-                <td colSpan="7" className="py-8 text-center text-gray-500">No content in table</td>
+                <td colSpan="7" className="py-8 text-center text-gray-500">
+                  No content in table
+                </td>
               </tr>
             )}
             {!loading &&
               historyData.map((item, index) => (
                 <tr
                   key={index}
-                  className={` transition-all duration-200 ${index % 2 === 0 ? "bg-gray-50" : "bg-white"
-                    } hover:bg-gray-100`}
+                  className={` transition-all duration-200 ${
+                    index % 2 === 0 ? "bg-gray-50" : "bg-white"
+                  } hover:bg-gray-100`}
                 >
                   <td className="px-6 py-3">{formatDate(item.createdAt)}</td>
                   <td className="px-6 py-3 font-medium">
                     <span
-                      className={`px-2 py-1 rounded-full text-xs font-semibold ${item.method === "GET"
-                        ? "bg-green-100 text-green-600"
-                        : item.method === "POST"
+                      className={`px-2 py-1 rounded-full text-xs font-semibold ${
+                        item.method === "GET"
+                          ? "bg-green-100 text-green-600"
+                          : item.method === "POST"
                           ? "bg-blue-100 text-blue-600"
                           : item.method === "DELETE"
-                            ? "bg-red-100 text-red-600"
-                            : "bg-yellow-100 text-yellow-600"
-                        }`}
+                          ? "bg-red-100 text-red-600"
+                          : "bg-yellow-100 text-yellow-600"
+                      }`}
                     >
                       {item.method}
                     </span>
                   </td>
-                  <td className="px-6 py-3 text-blue-500 truncate max-w-xs">{item.url}</td>
+                  <td className="px-6 py-3 text-blue-500 truncate max-w-xs">
+                    {item.url}
+                  </td>
                   <td className="px-6 py-3">
                     <span
-                      className={`px-2 py-1 rounded-full text-xs font-semibold ${item.status === "SUCCESS"
-                        ? "bg-green-100 text-green-600"
-                        : item.status === "ERROR"
+                      className={`px-2 py-1 rounded-full text-xs font-semibold ${
+                        item.status === "SUCCESS"
+                          ? "bg-green-100 text-green-600"
+                          : item.status === "ERROR"
                           ? "bg-red-100 text-red-600"
                           : "bg-gray-100 text-gray-600"
-                        }`}
+                      }`}
                     >
                       {item.status}
                     </span>
@@ -196,7 +203,6 @@ const History = () => {
           </tbody>
         </table>
       </div>
-
 
       {/* Pagination */}
       <div className="mt-4 flex justify-between items-center">

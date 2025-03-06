@@ -3,22 +3,17 @@ import axiosInstance from "../axios/axiosInstance";
 import RequestUI from "../components/RequestUI";
 import CreateCollectionUI from "../components/CreateCollectionUI";
 import TabItem from "../components/TabItem";
-// import { BsArrowClockwise } from "react-icons/bs";
-import { BsCloudDownload, BsDownload } from "react-icons/bs";
-import { BsPencil } from "react-icons/bs";
+import { BsCloudDownload } from "react-icons/bs";
 
 export default function Home() {
   const [showMethodDropdown, setShowMethodDropdown] = useState(false);
   const [showAuthDropdown, setShowAuthDropdown] = useState(false);
   const [collections, setCollections] = useState([]);
   const [searchTerm, setSearchTerm] = useState("");
-  const [selectedCollection, setSelectedCollection] = useState(null);
-  const [openDropdownId, setOpenDropdownId] = useState(null);
   const [collectionName, setCollectionName] = useState("");
   const [collectionDescription, setCollectionDescription] = useState("");
   const [tabs, setTabs] = useState([]); // State to manage tabs
   const [activeTabId, setActiveTabId] = useState(null); // State to track active tab
-  const [isCreatingCollection, setIsCreatingCollection] = useState(false);
   const [selectedOption, setSelectedOption] = useState("Collection"); // State to track export option
   const [selectedFile, setSelectedFile] = useState(null); // State to manage selected file for importing request
 
@@ -193,14 +188,12 @@ export default function Home() {
     // Add a new tab for creating a collection
     setTabs((prevTabs) => [...prevTabs, newTab]);
     setActiveTabId(newTab.id); // Set this tab as active
-    setIsCreatingCollection(true); // Show the create collection form
   };
 
   // Handle creating a new collection
   const handleSaveNewCollection = async (collectionData) => {
     try {
       await axiosInstance.post("/collections", collectionData);
-      setIsCreatingCollection(false);
       fetchCollections();
       setTabs((prevTabs) =>
         prevTabs.filter((tab) => tab.id !== "create-collection")
@@ -214,7 +207,6 @@ export default function Home() {
 
   // Handle canceling collection creation
   const handleCancelCollection = () => {
-    setIsCreatingCollection(false);
     setTabs((prevTabs) =>
       prevTabs.filter((tab) => tab.id !== "create-collection")
     ); // Remove the "Create Collection" tab
@@ -382,7 +374,7 @@ export default function Home() {
   };
 
   return (
-    <div className="flex h-screen bg-gray-50">
+    <div className="flex h-screen">
       {/* Left Sidebar */}
       <div className="w-72 bg-white p-4 border-r border-gray-200">
         <div className="mb-4">
@@ -419,7 +411,11 @@ export default function Home() {
       {/* Main Content */}
       <div className="flex-1 overflow-y-auto">
         {/* Tab Bar */}
-        <div className="flex border-b border-gray-200 mb-4 h-max-[47px]">
+        <div
+          className={`flex mb-4 h-max-[47px] ${
+            tabs.length > 0 && "border-b border-gray-200"
+          }`}
+        >
           {tabs.map((tab) => (
             <TabItem
               key={tab.id}
@@ -433,6 +429,14 @@ export default function Home() {
         </div>
 
         <div className="px-6">
+          {/* Display message if no tab is selected */}
+          {activeTabId === null && (
+            <p className="text-gray-500">
+              Select a collection to edit or add a new collection add new
+              collection
+            </p>
+          )}
+
           {/* Active Tab Content */}
           {activeTab && activeTab.type === "collection" && (
             <div>
@@ -625,9 +629,8 @@ export default function Home() {
             />
           )}
 
-          {/*  */}
           {/* Create Collection UI */}
-          {isCreatingCollection && (
+          {activeTab && activeTab.type === "create-collection" && (
             <CreateCollectionUI
               onSave={handleSaveNewCollection}
               onCancel={handleCancelCollection}

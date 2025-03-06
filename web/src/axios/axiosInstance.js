@@ -18,8 +18,8 @@ const axiosInstance = axios.create({
 axiosInstance.interceptors.request.use(
   (config) => {
     store.dispatch(startLoading());
-    // const updatedToken = getToken();
-    const updatedToken = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjY3OGZhNDg4NmRhNDQxYzkzOTg2NTljZiIsImlhdCI6MTc0MTE4MjY2MywiZXhwIjoxNzQxNTA2NjYzfQ.v6Jbba6pLjyMOfCOC9bBjqNLFKFZiNneEYIEVZvG6I0";
+    const updatedToken = getToken();
+    // const updatedToken = "";
     if (
       updatedToken &&
       updatedToken !== config.headers.Authorization?.split(" ")[1]
@@ -31,7 +31,7 @@ axiosInstance.interceptors.request.use(
   },
   (error) => {
     return Promise.reject(error);
-  },
+  }
 );
 
 axiosInstance.interceptors.response.use(
@@ -42,7 +42,7 @@ axiosInstance.interceptors.response.use(
   (error) => {
     store.dispatch(stopLoading());
     return Promise.reject(error);
-  },
+  }
 );
 
 export default axiosInstance;

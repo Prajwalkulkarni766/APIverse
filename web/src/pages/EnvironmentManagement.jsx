@@ -1,8 +1,8 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect } from "react";
 import axiosInstance from "../axios/axiosInstance";
 
 export default function EnvironmentManagement() {
-  const [searchTerm, setSearchTerm] = useState('');
+  const [searchTerm, setSearchTerm] = useState("");
   const [environments, setEnvironments] = useState([]);
   const [selectedEnv, setSelectedEnv] = useState(null);
   const [isCreating, setIsCreating] = useState(false);
@@ -15,7 +15,7 @@ export default function EnvironmentManagement() {
     setIsCreating(false);
     try {
       const response = await axiosInstance.get(`/environments/${env._id}`);
-      setSelectedEnv(response.data);  // Update the selected environment
+      setSelectedEnv(response.data); // Update the selected environment
     } catch (err) {
       setError("An error occurred while fetching environment details.");
       console.error("Error fetching environment details:", err);
@@ -36,10 +36,12 @@ export default function EnvironmentManagement() {
     setSelectedEnv({ ...selectedEnv, variables: updatedVars });
   };
 
-
   // Add New Variable
   const addVariable = () => {
-    setSelectedEnv({ ...selectedEnv, variables: [...selectedEnv.variables, { key: '', value: '' }] });
+    setSelectedEnv({
+      ...selectedEnv,
+      variables: [...selectedEnv.variables, { key: "", value: "" }],
+    });
   };
 
   // Remove Variable
@@ -51,7 +53,7 @@ export default function EnvironmentManagement() {
   // Start Creating New Environment
   const startCreatingNewEnvironment = () => {
     setIsCreating(true);
-    setSelectedEnv({ id: null, name: '', variables: [] });
+    setSelectedEnv({ id: null, name: "", variables: [] });
   };
 
   // Save New Environment
@@ -88,11 +90,16 @@ export default function EnvironmentManagement() {
       };
 
       try {
-        const response = await axiosInstance.put(`/environments/${selectedEnv._id}`, updatedEnv);
+        const response = await axiosInstance.put(
+          `/environments/${selectedEnv._id}`,
+          updatedEnv
+        );
 
-        setEnvironments(environments.map((env) =>
-          env._id === selectedEnv._id ? response.data : env
-        ));
+        setEnvironments(
+          environments.map((env) =>
+            env._id === selectedEnv._id ? response.data : env
+          )
+        );
 
         setIsCreating(false);
       } catch (err) {
@@ -125,7 +132,9 @@ export default function EnvironmentManagement() {
       {/* Left Panel - Environment List */}
       <div className="w-80 border-r border-gray-200 p-6">
         <div className="flex justify-between items-center mb-4">
-          <h1 className="text-2xl font-semibold text-gray-800">Env Management</h1>
+          <h1 className="text-2xl font-semibold text-gray-800">
+            Env Management
+          </h1>
           <button
             onClick={startCreatingNewEnvironment}
             className="h-8 p-2 pb-3 bg-[#FF6C37] text-white rounded flex items-center justify-center text-2xl"
@@ -150,11 +159,15 @@ export default function EnvironmentManagement() {
             <p className="text-red-500">{error}</p>
           ) : (
             environments
-              .filter(env => env.name.toLowerCase().includes(searchTerm.toLowerCase()))
+              .filter((env) =>
+                env.name.toLowerCase().includes(searchTerm.toLowerCase())
+              )
               .map((env) => (
                 <div
                   key={env._id}
-                  className={`p-2 cursor-pointer rounded ${selectedEnv?._id === env._id ? 'bg-gray-200' : ''}`}
+                  className={`p-2 cursor-pointer rounded ${
+                    selectedEnv?._id === env._id ? "bg-gray-200" : ""
+                  }`}
                   onClick={() => handleSelectEnv(env)}
                 >
                   {env.name}
@@ -168,7 +181,9 @@ export default function EnvironmentManagement() {
       <div className="flex-1 p-6">
         {selectedEnv || isCreating ? (
           <div>
-            <h2 className="text-xl font-semibold mb-4">{isCreating ? 'Create Environment' : 'Edit Environment'}</h2>
+            <h2 className="text-xl font-semibold mb-4">
+              {isCreating ? "Create Environment" : "Edit Environment"}
+            </h2>
             <input
               type="text"
               placeholder="Environment Name"
@@ -183,14 +198,22 @@ export default function EnvironmentManagement() {
                   type="text"
                   placeholder="Key"
                   value={variable.variable}
-                  onChange={(e) => handleVariableChange(index, e.target.value, variable.value)}
+                  onChange={(e) =>
+                    handleVariableChange(index, e.target.value, variable.value)
+                  }
                   className="px-3 py-2 border border-gray-300 rounded w-1/2"
                 />
                 <input
                   type="text"
                   placeholder="Value"
                   value={variable.value}
-                  onChange={(e) => handleVariableChange(index, variable.variable, e.target.value)}
+                  onChange={(e) =>
+                    handleVariableChange(
+                      index,
+                      variable.variable,
+                      e.target.value
+                    )
+                  }
                   className="px-3 py-2 border border-gray-300 rounded w-1/2"
                 />
                 <button
@@ -201,23 +224,32 @@ export default function EnvironmentManagement() {
                 </button>
               </div>
             ))}
-            <button onClick={addVariable} className="bg-[#FF6C37] text-white px-4 py-2 rounded mt-4">
+            <button
+              onClick={addVariable}
+              className="bg-[#FF6C37] text-white px-4 py-2 rounded mt-4"
+            >
               Add Variable
             </button>
             {isCreating ? (
-              <button onClick={saveNewEnvironment} className="bg-green-500 text-white px-4 py-2 rounded mt-4 ml-2">
+              <button
+                onClick={saveNewEnvironment}
+                className="bg-green-500 text-white px-4 py-2 rounded mt-4 ml-2"
+              >
                 Save Environment
               </button>
-            ) :
-              (
-                <button onClick={saveExistingEnvironment} className="bg-green-500 text-white px-4 py-2 rounded mt-4 ml-2">
-                  Save Changes
-                </button>
-              )
-            }
+            ) : (
+              <button
+                onClick={saveExistingEnvironment}
+                className="bg-green-500 text-white px-4 py-2 rounded mt-4 ml-2"
+              >
+                Save Changes
+              </button>
+            )}
           </div>
         ) : (
-          <p className="text-gray-500">Select an environment to edit or click <span className="text-[#FF6C37]">+</span> to add a new environment</p>
+          <p className="text-gray-500">
+            Select an environment to edit or click + to add a new environment
+          </p>
         )}
       </div>
     </div>
