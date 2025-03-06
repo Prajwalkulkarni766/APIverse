@@ -1,15 +1,24 @@
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { BsCloudUpload } from "react-icons/bs";
+import axiosInstance from "../axios/axiosInstance";
 
 export default function CreateCollectionUI({ onSave, onCancel }) {
   const [newCollectionName, setNewCollectionName] = useState("");
   const [newCollectionDescription, setNewCollectionDescription] = useState("");
   const [selectedOption, setSelectedOption] = useState("Collection"); // State to track export option
+  const [selectedFile, setSelectedFile] = useState(null); // State to track selected file
+
+  const fileInputRef = useRef(null); // Ref for file input
 
   const handleSave = () => {
     // Validate input if needed
     if (!newCollectionName.trim()) {
-      // You could add error handling/validation here
+      alert("Collection name is required.");
+      return;
+    }
+
+    if (!newCollectionDescription.trim()) {
+      alert("Collection description is required.");
       return;
     }
 
@@ -22,6 +31,51 @@ export default function CreateCollectionUI({ onSave, onCancel }) {
     // Reset form fields
     setNewCollectionName("");
     setNewCollectionDescription("");
+  };
+
+  // Handel file select
+  const handleFileSelect = (e) => {
+    const file = e.target.files[0];
+    if (file && file.type === "application/json") {
+      setSelectedFile(file);
+      handleImportFile();
+    } else {
+      alert("Please select a valid JSON file.");
+    }
+  };
+
+  // Handle import file
+  const handleImportFile = async () => {
+    if (!selectedFile) {
+      alert("Please select a JSON file to import.");
+      return;
+    }
+
+    const formData = new FormData();
+    formData.append("file", selectedFile);
+
+    let url;
+
+    if (selectedOption === "Collection") {
+      url = "/import/collection";
+    } else if (selectedOption === "Both") {
+      url = "/import/both";
+    } else {
+      alert("Invalid option selection");
+      return;
+    }
+
+    try {
+      await axiosInstance.post(url, formData, {
+        headers: {
+          "Content-Type": "multipart/form-data",
+        },
+      });
+      alert("Import operation successfully executed");
+    } catch (error) {
+      alert("Error importing collection. Please try again.");
+      console.error("Error importing collection:", error);
+    }
   };
 
   return (
@@ -40,15 +94,27 @@ export default function CreateCollectionUI({ onSave, onCancel }) {
           <option value="Collection" selected>
             Import Collection
           </option>
+          <option value="Both" selected>
+            Import Both
+          </option>
         </select>
 
         {/* Export Button */}
         <button
-          // onClick={() => handleExport(activeTab.data.collection._id)}
+          onClick={() => fileInputRef.current.click()}
           className="bg-[#FF6C37] text-white px-4 py-2 rounded-md hover:bg-[#ff5719] flex items-center space-x-2 cursor-pointer"
         >
           <BsCloudUpload className="text-xl" />
         </button>
+
+        {/* Hidden file input */}
+        <input
+          type="file"
+          ref={fileInputRef}
+          accept="application/json"
+          onChange={handleFileSelect}
+          style={{ display: "none" }}
+        />
       </div>
 
       <div className="mb-4">

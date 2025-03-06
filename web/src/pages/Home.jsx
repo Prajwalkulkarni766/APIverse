@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import axiosInstance from "../axios/axiosInstance";
 import RequestUI from "../components/RequestUI";
 import CreateCollectionUI from "../components/CreateCollectionUI";
@@ -20,6 +20,10 @@ export default function Home() {
   const [activeTabId, setActiveTabId] = useState(null); // State to track active tab
   const [isCreatingCollection, setIsCreatingCollection] = useState(false);
   const [selectedOption, setSelectedOption] = useState("Collection"); // State to track export option
+  const [selectedFile, setSelectedFile] = useState(null); // State to manage selected file for importing request
+
+  // Create a reference to the file input element to trigger it programmatically
+  const fileInputRef = useRef(null);
 
   // Fetch collections
   const fetchCollections = async () => {
@@ -201,8 +205,10 @@ export default function Home() {
       setTabs((prevTabs) =>
         prevTabs.filter((tab) => tab.id !== "create-collection")
       ); // Remove the "Create Collection" tab
+      alert("Collection created successfully!");
     } catch (error) {
       console.error("Error creating new collection", error);
+      alert("Problem while creating collection");
     }
   };
 
@@ -304,7 +310,7 @@ export default function Home() {
       }
 
       if (!url) {
-        console.error("Invalid option selected for export");
+        alert("Invalid option selected for export");
         return;
       }
 
@@ -323,8 +329,55 @@ export default function Home() {
       link.href = URL.createObjectURL(blob);
       link.download = `${fileName}.json`;
       link.click();
+
+      alert("Data exported successfully!");
     } catch (error) {
       console.error("Error exporting data", error);
+      alert("Problem while exporting data");
+    }
+  };
+
+  // Handle the file selection
+  const handleFileSelect = (e) => {
+    const file = e.target.files[0];
+    if (file && file.type === "application/json") {
+      setSelectedFile(file);
+      handleImportFile();
+    } else {
+      alert("Please select a valid JSON file.");
+    }
+  };
+
+  // Handle Import Requests - Send request to /import/request with selected JSON file
+  const handleImportRequests = async () => {
+    // Trigger the file input dialog when the user clicks on "Import Requests"
+    fileInputRef.current.click();
+  };
+
+  // Handle file selection and import request
+  const handleImportFile = async () => {
+    if (!selectedFile) {
+      alert("Please select a JSON file to import.");
+      return;
+    }
+
+    // console.log("file imported successfully");
+    const formData = new FormData();
+    formData.append("file", selectedFile);
+    formData.append("collectionId", activeTab.data.collection._id);
+
+    try {
+      await axiosInstance.post("/import/request", formData, {
+        headers: {
+          "Content-Type": "multipart/form-data",
+        },
+      });
+
+      setSelectedFile(null);
+      alert("Import operation successfully executed");
+    } catch (error) {
+      console.error("Error importing requests:", error);
+      alert("Problem while importing file");
     }
   };
 
@@ -451,6 +504,25 @@ export default function Home() {
                 >
                   Add New Request
                 </p>
+
+                {/* Import Requests Button */}
+                <div className="flex">
+                  <p
+                    onClick={handleImportRequests}
+                    className="ml-4 cursor-pointer text-[#FF6C37] underline"
+                  >
+                    Import Requests
+                  </p>
+
+                  {/* File Input for JSON file selection */}
+                  <input
+                    ref={fileInputRef}
+                    type="file"
+                    accept=".json"
+                    className="hidden"
+                    onChange={handleFileSelect}
+                  />
+                </div>
               </div>
               {activeTab &&
               activeTab.data.requests &&

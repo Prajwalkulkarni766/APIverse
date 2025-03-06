@@ -1,9 +1,11 @@
-import React, { useState } from 'react';
-import axiosInstance from '../axios/axiosInstance';
+import React, { useState } from "react";
+import axiosInstance from "../axios/axiosInstance";
 
 const CollectionUI = ({ collection, onSave, onEdit, isEditing }) => {
   const [collectionName, setCollectionName] = useState(collection.name);
-  const [collectionDescription, setCollectionDescription] = useState(collection.description);
+  const [collectionDescription, setCollectionDescription] = useState(
+    collection.description
+  );
 
   const handleSaveChanges = async () => {
     try {
@@ -11,10 +13,15 @@ const CollectionUI = ({ collection, onSave, onEdit, isEditing }) => {
         name: collectionName,
         description: collectionDescription,
       };
-      await axiosInstance.put(`/collections/${collection._id}`, updatedCollection);
+      await axiosInstance.put(
+        `/collections/${collection._id}`,
+        updatedCollection
+      );
       // onSave(updatedCollection);
+      alert("Collection upated successfully");
     } catch (error) {
-      console.error('Error saving collection changes', error);
+      console.error("Error saving collection changes", error);
+      alert("Problem while updating collection");
     }
   };
 
@@ -70,9 +77,7 @@ const CollectionUI = ({ collection, onSave, onEdit, isEditing }) => {
         <strong>Shared With:</strong>
         <ul>
           {collection?.sharedWith.length > 0 ? (
-            collection?.sharedWith.map((user, idx) => (
-              <li key={idx}>{user}</li>
-            ))
+            collection?.sharedWith.map((user, idx) => <li key={idx}>{user}</li>)
           ) : (
             <p>No users have access to this collection.</p>
           )}
@@ -81,7 +86,7 @@ const CollectionUI = ({ collection, onSave, onEdit, isEditing }) => {
 
       {/* Save Changes Button */}
       {isEditing && (
-        <div className='flex gap-2'>
+        <div className="flex gap-2">
           <button
             onClick={handleSaveChanges}
             className="mt-4 px-6 py-2 bg-[#FF6C37] text-white rounded-md hover:bg-[#ff5719]"
