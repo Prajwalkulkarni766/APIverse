@@ -665,15 +665,15 @@ export default function Home() {
                       }}
                     >
                       <div className="flex justify-between">
-                        <span>{req.method}</span> - <span>{req.name}</span>
-                        {activeTab.isEditing && (
-                          <button
-                            onClick={() => handleDeleteRequest(req._id)}
-                            className="text-red-500 hover:text-red-700 cursor-pointer"
-                          >
-                            Delete
-                          </button>
-                        )}
+                        <span>
+                          {req.method} - {req.name}
+                        </span>
+                        <button
+                          onClick={() => handleDeleteRequest(req._id)}
+                          className="text-red-500 hover:text-red-700 cursor-pointer"
+                        >
+                          Delete
+                        </button>
                       </div>
                     </li>
                   ))}
@@ -685,169 +685,76 @@ export default function Home() {
                 <h3 className="text-lg font-semibold mb-2">
                   Collection shared with
                 </h3>
-                {/* {activeTab.isEditing ? (
-                  // Always show input in edit mode
-                  <div className="mb-4">
-                    <div className="flex items-center gap-2">
-                      <input
-                        type="email"
-                        value={emailInput}
-                        onChange={(e) => handleEmailChange(e)}
-                        placeholder="Enter user email to share with"
-                        className="w-full px-4 py-2 border border-gray-200 rounded-md"
-                      />
-                      <button
-                        onClick={() => handleAddUser()}
-                        className="bg-[#FF6C37] text-white px-4 py-2 rounded-md hover:bg-[#ff5719]"
-                      >
-                        Add
-                      </button>
-                    </div>
 
-                    {searchResults && searchResults.length > 0 && (
-                      <div className="mt-2 border border-gray-200 rounded-md">
-                        {searchResults.map((user) => (
-                          <div
-                            key={user._id}
-                            className="p-2 cursor-pointer hover:bg-gray-100"
-                            onClick={() => {
-                              setEmailInput(user.email);
-                              // setSearchResults([]);
-                            }}
-                          >
-                            {user.email}
-                          </div>
-                        ))}
-                      </div>
-                    )}
-
-                    {activeTab.data.collection.sharedWith &&
-                    activeTab.data.collection.sharedWith.length > 0 ? (
-                      <div className="mt-4">
-                        <h4 className="font-medium mb-2">
-                          Currently shared with:
-                        </h4>
-                        <ul className="space-y-2">
-                          {activeTab.data.collection.sharedWith.map(
-                            (data, index) => (
-                              <li
-                                key={index}
-                                className="flex items-center justify-between p-2 bg-gray-100 rounded-md"
-                              >
-                                <span>
-                                  {data.firstName} {data.lastName}
-                                </span>
-                                <button
-                                  onClick={() => handleRemoveUser(data._id)}
-                                  className="text-red-500 hover:text-red-700 cursor-pointer"
-                                >
-                                  Remove
-                                </button>
-                              </li>
-                            )
-                          )}
-                        </ul>
-                      </div>
-                    ) : (
-                      <p className="mt-2 text-gray-500">
-                        This collection is not shared with anyone yet.
-                      </p>
-                    )}
+                <div className="mb-4">
+                  <div className="flex items-center gap-2">
+                    <input
+                      type="email"
+                      value={emailInput}
+                      onChange={(e) => handleEmailChange(e)}
+                      placeholder="Enter user email to share with"
+                      className="w-full px-4 py-2 border border-gray-200 rounded-md"
+                    />
+                    <button
+                      onClick={() => handleAddUser()}
+                      className="bg-[#FF6C37] text-white px-4 py-2 rounded-md hover:bg-[#ff5719]"
+                    >
+                      Add
+                    </button>
                   </div>
-                ) : (
-                  <>
-                    {!activeTab.data.collection.sharedWith ||
-                    activeTab.data.collection.sharedWith.length === 0 ? (
-                      <p>This collection is shared with no one.</p>
-                    ) : (
-                      <>
-                        <ul className="mt-2">
-                          {activeTab.data.collection.sharedWith.map(
-                            (data, index) => (
-                              <li key={index} className="p-1">
+
+                  {/* Display search results */}
+                  {searchResults && searchResults.length > 0 && (
+                    <div className="mt-2 border border-gray-200 rounded-md">
+                      {searchResults.map((user) => (
+                        <div
+                          key={user._id}
+                          className="p-2 cursor-pointer hover:bg-gray-100"
+                          onClick={() => {
+                            setEmailInput(user.email);
+                            // setSearchResults([]);
+                          }}
+                        >
+                          {user.email}
+                        </div>
+                      ))}
+                    </div>
+                  )}
+
+                  {/* Display current shared users with option to remove */}
+                  {activeTab.data.collection.sharedWith &&
+                  activeTab.data.collection.sharedWith.length > 0 ? (
+                    <div className="mt-4">
+                      <h4 className="font-medium mb-2">
+                        Currently shared with:
+                      </h4>
+                      <ul className="space-y-2">
+                        {activeTab.data.collection.sharedWith.map(
+                          (data, index) => (
+                            <li
+                              key={index}
+                              className="flex items-center justify-between p-2 bg-gray-100 rounded-md"
+                            >
+                              <span>
                                 {data.firstName} {data.lastName}
-                              </li>
-                            )
-                          )}
-                        </ul>
-                      </>
-                    )}
-                  </>
-                )} */}
-
-
-<div className="mb-4">
-                    <div className="flex items-center gap-2">
-                      <input
-                        type="email"
-                        value={emailInput}
-                        onChange={(e) => handleEmailChange(e)}
-                        placeholder="Enter user email to share with"
-                        className="w-full px-4 py-2 border border-gray-200 rounded-md"
-                      />
-                      <button
-                        onClick={() => handleAddUser()}
-                        className="bg-[#FF6C37] text-white px-4 py-2 rounded-md hover:bg-[#ff5719]"
-                      >
-                        Add
-                      </button>
-                    </div>
-
-                    {/* Display search results */}
-                    {searchResults && searchResults.length > 0 && (
-                      <div className="mt-2 border border-gray-200 rounded-md">
-                        {searchResults.map((user) => (
-                          <div
-                            key={user._id}
-                            className="p-2 cursor-pointer hover:bg-gray-100"
-                            onClick={() => {
-                              setEmailInput(user.email);
-                              // setSearchResults([]);
-                            }}
-                          >
-                            {user.email}
-                          </div>
-                        ))}
-                      </div>
-                    )}
-
-                    {/* Display current shared users with option to remove */}
-                    {activeTab.data.collection.sharedWith &&
-                    activeTab.data.collection.sharedWith.length > 0 ? (
-                      <div className="mt-4">
-                        <h4 className="font-medium mb-2">
-                          Currently shared with:
-                        </h4>
-                        <ul className="space-y-2">
-                          {activeTab.data.collection.sharedWith.map(
-                            (data, index) => (
-                              <li
-                                key={index}
-                                className="flex items-center justify-between p-2 bg-gray-100 rounded-md"
+                              </span>
+                              <button
+                                onClick={() => handleRemoveUser(data._id)}
+                                className="text-red-500 hover:text-red-700 cursor-pointer"
                               >
-                                <span>
-                                  {data.firstName} {data.lastName}
-                                </span>
-                                <button
-                                  onClick={() => handleRemoveUser(data._id)}
-                                  className="text-red-500 hover:text-red-700 cursor-pointer"
-                                >
-                                  Remove
-                                </button>
-                              </li>
-                            )
-                          )}
-                        </ul>
-                      </div>
-                    ) : (
-                      <p className="mt-2 text-gray-500">
-                        This collection is not shared with anyone yet.
-                      </p>
-                    )}
-                  </div>
-
-
-
+                                Remove
+                              </button>
+                            </li>
+                          )
+                        )}
+                      </ul>
+                    </div>
+                  ) : (
+                    <p className="mt-2 text-gray-500">
+                      This collection is not shared with anyone yet.
+                    </p>
+                  )}
+                </div>
               </div>
 
               {/* Save Changes Button */}

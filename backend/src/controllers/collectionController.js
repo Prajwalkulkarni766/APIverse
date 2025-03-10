@@ -43,7 +43,9 @@ const getCollectionsName = async (req, res) => {
   const userId = req.user.id;
 
   try {
-    const collections = await Collection.find({ userId }).select("name");
+    const collections = await Collection.find({
+      $or: [{ userId }, { sharedWith: userId }],
+    }).select("name");
     res.status(200).json(collections);
   } catch (err) {
     res
@@ -68,7 +70,9 @@ const getCollectionById = async (req, res) => {
       const userIds = collection.sharedWith;
 
       // Fetch user details (firstName and lastName) for each user
-      const users = await User.find({ _id: { $in: userIds } }).select("firstName lastName");
+      const users = await User.find({ _id: { $in: userIds } }).select(
+        "firstName lastName"
+      );
 
       collection.sharedWith = users;
     }

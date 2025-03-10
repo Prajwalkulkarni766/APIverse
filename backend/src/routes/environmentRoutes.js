@@ -6,6 +6,7 @@ const {
   updateEnvironment,
   deleteEnvironment,
   getEnvironmentsName,
+  getEnvironmentDetailById,
 } = require("../controllers/environmentController");
 const authMiddleware = require("../middlewares/authMiddleware");
 
@@ -15,6 +16,7 @@ router.post("/", authMiddleware, createEnvironment);
 router.get("/", authMiddleware, getAllEnvironments);
 router.get("/name", authMiddleware, getEnvironmentsName);
 router.get("/:id", authMiddleware, getEnvironmentById);
+router.get("/detail/:id", authMiddleware, getEnvironmentDetailById);
 router.put("/:id", authMiddleware, updateEnvironment);
 router.delete("/:id", authMiddleware, deleteEnvironment);
 

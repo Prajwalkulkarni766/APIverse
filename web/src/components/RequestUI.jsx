@@ -25,6 +25,11 @@ export default function RequestUI({
   const [headers, setHeaders] = useState(selectedRequest.headers || []);
   const [file, setFile] = useState(null);
 
+  // Environment variable states
+  const [envVariableNames, setEnvVariableNames] = useState([]);
+  const [selectedEnv, setSelectedEnv] = useState("");
+  const [dataOfSelectedEnv, setDataOfSelectedEnv] = useState([]);
+
   // Response section states
   const [responseTab, setResponseTab] = useState("Body");
   const [responseBody, setResponseBody] = useState(null);
@@ -169,12 +174,38 @@ export default function RequestUI({
     }
   };
 
+  const extractEnvVariableName = (str) => {
+    const regex = /\{\{ (.*?) \}\}/;
+    const match = str.match(regex);
+    return match ? match[1] : null; // Return null if the pattern is not found
+  };
+
   // Send request and save to history
   const handleSend = async () => {
+    let updatedUrl = null;
+    let variable = extractEnvVariableName(url);
+    let isFound = false;
+
+    if (variable !== null) {
+      dataOfSelectedEnv.variables.forEach((data) => {
+        if (variable === data.variable) {
+          updatedUrl = url.replace(`{{ ${variable} }}`, data.value);
+          isFound = true;
+        }
+      });
+    }
+
+    if (!isFound) {
+      alert(
+        "Inavlid variable name. Provided variable not found in environment that you have selected"
+      );
+      return;
+    }
+
     // Create request configuration based on user inputs
     const config = {
       method: method,
-      url: url,
+      url: updatedUrl,
       headers: {},
     };
 
@@ -226,19 +257,22 @@ export default function RequestUI({
       let parsedResponseBody = response.data;
       const contentType = response.headers["content-type"];
 
-      if (contentType.includes('application/json')) {
+      if (contentType.includes("application/json")) {
         // Handle JSON response
         parsedResponseBody = JSON.stringify(response.data, null, 2);
-      } else if (contentType.includes('text/html')) {
+      } else if (contentType.includes("text/html")) {
         // Handle HTML response
         parsedResponseBody = response.data;
-      } else if (contentType.includes('application/xml') || contentType.includes('text/xml')) {
+      } else if (
+        contentType.includes("application/xml") ||
+        contentType.includes("text/xml")
+      ) {
         // Handle XML response
         parsedResponseBody = response.data;
-      } else if (contentType.includes('text/plain')) {
+      } else if (contentType.includes("text/plain")) {
         // Handle plain text response
         parsedResponseBody = response.data;
-      } else if (contentType.includes('text/csv')) {
+      } else if (contentType.includes("text/csv")) {
         // Handle CSV response
         parsedResponseBody = response.data;
       } else {
@@ -283,6 +317,34 @@ export default function RequestUI({
       });
     }
   };
+
+  // Fetch environment variable names
+  const fetchEnvVariableNames = async () => {
+    try {
+      const envVariableName = await axiosInstance.get("/environments/name");
+      setEnvVariableNames(envVariableName.data);
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
+  // Handle change in the dropdown selection and fetch sub env variables according to selection
+  const handleEnvChange = async (e) => {
+    e.preventDefault();
+    setSelectedEnv(e.target.value);
+    try {
+      const envData = await axiosInstance(
+        `/environments/detail/${e.target.value}`
+      );
+      setDataOfSelectedEnv(envData.data);
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
+  useEffect(() => {
+    fetchEnvVariableNames();
+  }, []);
 
   return (
     <div>
@@ -363,19 +425,21 @@ export default function RequestUI({
           <div className="min-h-68">
             <div className="border-b border-gray-200">
               <div className="flex gap-4 mt-2">
-                {["Authorization", "Headers", "Body"].map((tab) => (
-                  <button
-                    key={tab}
-                    onClick={() => setActiveTab(tab)}
-                    className={`px-4 pb-2 -mb-px cursor-pointer ${
-                      activeTab === tab
-                        ? "border-b-2 border-[#FF6C37] text-[#FF6C37]"
-                        : "text-gray-500"
-                    }`}
-                  >
-                    {tab}
-                  </button>
-                ))}
+                {["Authorization", "Headers", "Body", "Env in url"].map(
+                  (tab) => (
+                    <button
+                      key={tab}
+                      onClick={() => setActiveTab(tab)}
+                      className={`px-4 pb-2 -mb-px cursor-pointer ${
+                        activeTab === tab
+                          ? "border-b-2 border-[#FF6C37] text-[#FF6C37]"
+                          : "text-gray-500"
+                      }`}
+                    >
+                      {tab}
+                    </button>
+                  )
+                )}
               </div>
             </div>
 
@@ -509,6 +573,28 @@ export default function RequestUI({
                     </div>
                   )}
                 </div>
+              )}
+
+              {activeTab == "Env in url" && (
+                <>
+                  <div className="space-y-4">
+                    <div>
+                      <label className="block mb-2">Type</label>
+                      <select
+                        className="w-full px-4 py-2 border border-gray-200 rounded-md"
+                        value={selectedEnv}
+                        onChange={handleEnvChange}
+                      >
+                        <option value="">Select Environment Variable</option>
+                        {envVariableNames.map((envName, index) => (
+                          <option key={index} value={envName._id}>
+                            {envName.name}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                  </div>
+                </>
               )}
             </div>
           </div>
