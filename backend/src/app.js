@@ -10,6 +10,7 @@ const historyRoutes = require("./routes/historyRoutes");
 const environmentRoutes = require("./routes/environmentRoutes");
 const exportRoutes = require("./routes/exportRoutes");
 const importRoutes = require("./routes/importRoute");
+const userRoutes = require("./routes/userRoutes");
 const errorMiddleware = require("./middlewares/errorMiddleware");
 
 const app = express();
@@ -24,6 +25,7 @@ app.use("/api/history", historyRoutes);
 app.use("/api/environments", environmentRoutes);
 app.use("/api/export", exportRoutes);
 app.use("/api/import", importRoutes);
+app.use("/api/users", userRoutes);
 app.use(errorMiddleware);
 
 module.exports = app;

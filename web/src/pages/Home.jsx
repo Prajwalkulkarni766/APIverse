@@ -16,6 +16,9 @@ export default function Home() {
   const [activeTabId, setActiveTabId] = useState(null); // State to track active tab
   const [selectedOption, setSelectedOption] = useState("Collection"); // State to track export option
   const [selectedFile, setSelectedFile] = useState(null); // State to manage selected file for importing request
+  const [userList, setUserList] = useState([]); // State to manage display of user list
+  const [emailInput, setEmailInput] = useState(""); // State to manage email address entered by user for adding other users into collection
+  const [searchResults, setSearchResults] = useState(null); // State to manage search result
 
   // Create a reference to the file input element to trigger it programmatically
   const fileInputRef = useRef(null);
@@ -123,6 +126,7 @@ export default function Home() {
       const updatedCollection = {
         name: collectionName,
         description: collectionDescription,
+        sharedWith: activeTab.data.sharedWith,
       };
 
       // Save the updated collection
@@ -143,6 +147,7 @@ export default function Home() {
                     ...tab.data.collection,
                     name: collectionName,
                     description: collectionDescription,
+                    sharedWith: activeTab.data.sharedWith,
                   },
                 },
                 label: collectionName, // Update the tab label
@@ -167,6 +172,7 @@ export default function Home() {
 
       // Force update active tab UI
       setActiveTabId(activeTabId); // Trigger a re-render of the active tab
+      alert("Collection updated successfully!");
     } catch (error) {
       console.error("Error saving collection changes", error);
     }
@@ -373,6 +379,74 @@ export default function Home() {
     }
   };
 
+  // Handle email input change
+  const handleEmailChange = async (e) => {
+    const value = e.target.value;
+    setEmailInput(value);
+
+    if (value.trim() !== "") {
+      try {
+        const users = await axiosInstance.get(`users/search/${value}`);
+        // const filteredUsers = users.data.filter((user) =>
+        //   user.email.toLowerCase().includes(value.toLowerCase())
+        // );
+        setSearchResults(users.data);
+      } catch (error) {
+        console.error("Error searching users:", error);
+      }
+    } else {
+      setSearchResults([]);
+    }
+  };
+
+  // Add the selected user to the sharedWith list
+  const handleAddUser = async () => {
+    console.log(searchResults);
+    if (emailInput.trim() !== "") {
+      const userToAdd = searchResults.find((user) => user.email === emailInput);
+
+      if (userToAdd) {
+        const currentSharedWith = activeTab.data.sharedWith || [];
+        const updatedSharedWith = [...currentSharedWith, userToAdd._id];
+
+        try {
+          // Update the backend
+          await axiosInstance.put(
+            `/collections/${activeTab.data.collection._id}`,
+            {
+              sharedWith: updatedSharedWith,
+            }
+          );
+
+          // Update the tab data locally
+          setTabs((prevTabs) =>
+            prevTabs.map((tab) =>
+              tab.id === activeTabId
+                ? {
+                    ...tab,
+                    data: {
+                      ...tab.data,
+                      sharedWith: updatedSharedWith,
+                    },
+                  }
+                : tab
+            )
+          );
+
+          setEmailInput(""); // Clear input
+          setSearchResults([]); // Clear results
+        } catch (error) {
+          console.error("Error updating collection:", error);
+          alert("Failed to update collection.");
+        }
+      } else {
+        alert("User not found in search results.");
+      }
+    } else {
+      alert("Please enter a valid email address.");
+    }
+  };
+
   return (
     <div className="flex h-screen">
       {/* Left Sidebar */}
@@ -562,6 +636,151 @@ export default function Home() {
                   ))}
                 </ul>
               )}
+
+              {/* Display shared with users */}
+              <div className="mt-4">
+                <h3 className="text-lg font-semibold mb-2">
+                  Collection shared with
+                </h3>
+                {activeTab.isEditing ? (
+                  // Always show input in edit mode
+                  <div className="mb-4">
+                    <div className="flex items-center gap-2">
+                      <input
+                        type="email"
+                        value={emailInput}
+                        onChange={(e) => handleEmailChange(e)}
+                        placeholder="Enter user email to share with"
+                        className="w-full px-4 py-2 border border-gray-200 rounded-md"
+                      />
+                      {/* <button
+                        onClick={() => {
+                          if (emailInput.trim() !== "") {
+                            const currentSharedWith =
+                              activeTab.data.sharedWith || [];
+                            const updatedSharedWith = [
+                              ...currentSharedWith,
+                              emailInput,
+                            ];
+                            setTabs((prevTabs) =>
+                              prevTabs.map((tab) =>
+                                tab.id === activeTabId
+                                  ? {
+                                      ...tab,
+                                      data: {
+                                        ...tab.data,
+                                        sharedWith: updatedSharedWith,
+                                      },
+                                    }
+                                  : tab
+                              )
+                            );
+
+                            setEmailInput(""); // Clear input
+                            setSearchResults([]); // Clear results
+                          }
+                        }}
+                        className="bg-[#FF6C37] text-white px-4 py-2 rounded-md hover:bg-[#ff5719]"
+                      >
+                        Add
+                      </button> */}
+                      <button
+                        onClick={() => handleAddUser()}
+                        className="bg-[#FF6C37] text-white px-4 py-2 rounded-md hover:bg-[#ff5719]"
+                      >
+                        Add
+                      </button>
+                    </div>
+
+                    {/* Display search results */}
+                    {searchResults && searchResults.length > 0 && (
+                      <div className="mt-2 border border-gray-200 rounded-md">
+                        {searchResults.map((user) => (
+                          <div
+                            key={user._id}
+                            className="p-2 cursor-pointer hover:bg-gray-100"
+                            onClick={() => {
+                              setEmailInput(user.email);
+                              // setSearchResults([]);
+                            }}
+                          >
+                            {user.email}
+                          </div>
+                        ))}
+                      </div>
+                    )}
+
+                    {/* Display current shared users with option to remove */}
+                    {activeTab.data.sharedWith &&
+                    activeTab.data.sharedWith.length > 0 ? (
+                      <div className="mt-4">
+                        <h4 className="font-medium mb-2">
+                          Currently shared with:
+                        </h4>
+                        <ul className="space-y-2">
+                          {activeTab.data.sharedWith.map((email, index) => (
+                            <li
+                              key={index}
+                              className="flex items-center justify-between p-2 bg-gray-100 rounded-md"
+                            >
+                              <span>{email}</span>
+                              <button
+                                onClick={() => {
+                                  const updatedSharedWith = [
+                                    ...activeTab.data.sharedWith,
+                                  ];
+                                  updatedSharedWith.splice(index, 1);
+
+                                  // Update the tab data locally
+                                  setTabs((prevTabs) =>
+                                    prevTabs.map((tab) =>
+                                      tab.id === activeTabId
+                                        ? {
+                                            ...tab,
+                                            data: {
+                                              ...tab.data,
+                                              sharedWith: updatedSharedWith,
+                                            },
+                                          }
+                                        : tab
+                                    )
+                                  );
+                                }}
+                                className="text-red-500 hover:text-red-700"
+                              >
+                                Remove
+                              </button>
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
+                    ) : (
+                      <p className="mt-2 text-gray-500">
+                        This collection is not shared with anyone yet.
+                      </p>
+                    )}
+                  </div>
+                ) : (
+                  // Non-editing view
+                  <>
+                    {!activeTab.data.sharedWith ||
+                    activeTab.data.sharedWith.length === 0 ? (
+                      <p>This collection is shared with no one.</p>
+                    ) : (
+                      <>
+                        <p>This collection is shared with other users also.</p>
+                        <ul className="mt-2">
+                          {activeTab.data.sharedWith.map((email, index) => (
+                            <li key={index} className="p-1">
+                              {email}
+                            </li>
+                          ))}
+                        </ul>
+                      </>
+                    )}
+                  </>
+                )}
+              </div>
 
               {/* Save Changes Button */}
               {activeTab.isEditing && (
