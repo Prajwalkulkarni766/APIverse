@@ -1,5 +1,6 @@
 const Collection = require("../models/Collection");
-const Request  = require("../models/Request");
+const Request = require("../models/Request");
+const User = require("../models/User");
 
 // Create a new collection
 const createCollection = async (req, res) => {
@@ -17,7 +18,9 @@ const createCollection = async (req, res) => {
     await newCollection.save();
     res.status(201).json(newCollection);
   } catch (err) {
-    res.status(500).json({ message: "Failed to create collection", error: err.message });
+    res
+      .status(500)
+      .json({ message: "Failed to create collection", error: err.message });
   }
 };
 
@@ -29,7 +32,9 @@ const getCollections = async (req, res) => {
     const collections = await Collection.find({ userId });
     res.status(200).json(collections);
   } catch (err) {
-    res.status(500).json({ message: "Failed to fetch collections", error: err.message });
+    res
+      .status(500)
+      .json({ message: "Failed to fetch collections", error: err.message });
   }
 };
 
@@ -41,7 +46,9 @@ const getCollectionsName = async (req, res) => {
     const collections = await Collection.find({ userId }).select("name");
     res.status(200).json(collections);
   } catch (err) {
-    res.status(500).json({ message: "Failed to fetch collections", error: err.message });
+    res
+      .status(500)
+      .json({ message: "Failed to fetch collections", error: err.message });
   }
 };
 
@@ -51,10 +58,27 @@ const getCollectionById = async (req, res) => {
 
   try {
     const collection = await Collection.findById(collectionId);
-    const requests = await Request.find({ collectionId: collection._id })
-    res.status(200).json({collection, requests});
+
+    if (
+      collection &&
+      collection?.sharedWith &&
+      collection.sharedWith.length > 0
+    ) {
+      // Get the user IDs from the sharedWith array
+      const userIds = collection.sharedWith;
+
+      // Fetch user details (firstName and lastName) for each user
+      const users = await User.find({ _id: { $in: userIds } }).select("firstName lastName");
+
+      collection.sharedWith = users;
+    }
+
+    const requests = await Request.find({ collectionId: collection._id });
+    res.status(200).json({ collection, requests });
   } catch (err) {
-    res.status(500).json({ message: "Failed to fetch collection", error: err.message });
+    res
+      .status(500)
+      .json({ message: "Failed to fetch collection", error: err.message });
   }
 };
 
@@ -63,21 +87,24 @@ const getCollectionRequestName = async (req, res) => {
   const { collectionId } = req.params;
 
   try {
-    const collection = await Collection.findById(collectionId).select("requests");
-    
+    const collection =
+      await Collection.findById(collectionId).select("requests");
+
     if (!collection) {
       return res.status(404).json({ message: "Collection not found" });
     }
 
     // Extract only the 'name' and 'method' from each request
-    const requests = collection.requests.map(request => ({
+    const requests = collection.requests.map((request) => ({
       name: request.name,
-      method: request.method
+      method: request.method,
     }));
 
     res.status(200).json(requests);
   } catch (err) {
-    res.status(500).json({ message: "Failed to fetch requests", error: err.message });
+    res
+      .status(500)
+      .json({ message: "Failed to fetch requests", error: err.message });
   }
 };
 
@@ -96,9 +123,14 @@ const addRequestToCollection = async (req, res) => {
     collection.requests.push({ method, url, headers, body });
     await collection.save();
 
-    res.status(200).json({ message: "Request added to collection", collection });
+    res
+      .status(200)
+      .json({ message: "Request added to collection", collection });
   } catch (err) {
-    res.status(500).json({ message: "Failed to add request to collection", error: err.message });
+    res.status(500).json({
+      message: "Failed to add request to collection",
+      error: err.message,
+    });
   }
 };
 
@@ -116,7 +148,9 @@ const deleteCollection = async (req, res) => {
     await collection.deleteOne();
     res.status(200).json({ message: "Collection deleted successfully" });
   } catch (err) {
-    res.status(500).json({ message: "Failed to delete collection", error: err.message });
+    res
+      .status(500)
+      .json({ message: "Failed to delete collection", error: err.message });
   }
 };
 
@@ -140,7 +174,9 @@ const duplicateCollection = async (req, res) => {
     await duplicatedCollection.save();
     res.status(201).json(duplicatedCollection);
   } catch (err) {
-    res.status(500).json({ message: "Failed to duplicate collection", error: err.message });
+    res
+      .status(500)
+      .json({ message: "Failed to duplicate collection", error: err.message });
   }
 };
 
@@ -156,15 +192,21 @@ const shareCollection = async (req, res) => {
     }
 
     if (collection.sharedWith.includes(sharedWithUserId)) {
-      return res.status(400).json({ message: "User is already a collaborator" });
+      return res
+        .status(400)
+        .json({ message: "User is already a collaborator" });
     }
 
     collection.sharedWith.push(sharedWithUserId);
     await collection.save();
 
-    res.status(200).json({ message: "Collection shared successfully", collection });
+    res
+      .status(200)
+      .json({ message: "Collection shared successfully", collection });
   } catch (err) {
-    res.status(500).json({ message: "Failed to share collection", error: err.message });
+    res
+      .status(500)
+      .json({ message: "Failed to share collection", error: err.message });
   }
 };
 
@@ -198,18 +240,21 @@ const searchAndFilterCollections = async (req, res) => {
 
     res.status(200).json(collections);
   } catch (err) {
-    res.status(500).json({ message: "Failed to search and filter collections", error: err.message });
+    res.status(500).json({
+      message: "Failed to search and filter collections",
+      error: err.message,
+    });
   }
 };
 
 // Update the collection
-const updateTheCollection = async(req, res) => {
+const updateTheCollection = async (req, res) => {
   try {
     const { collectionId } = req.params;
     const { name, description, requests, sharedWith } = req.body;
 
     const collection = await Collection.findById(collectionId);
-    
+
     if (!collection) {
       return res.status(404).json({ message: "Collection not found" });
     }
@@ -226,6 +271,18 @@ const updateTheCollection = async(req, res) => {
     console.error(error);
     res.status(500).json({ message: "Server error" });
   }
-}
+};
 
-module.exports = { createCollection, getCollections, addRequestToCollection, deleteCollection, duplicateCollection, shareCollection, searchAndFilterCollections, getCollectionsName, getCollectionById, getCollectionRequestName, updateTheCollection };
+module.exports = {
+  createCollection,
+  getCollections,
+  addRequestToCollection,
+  deleteCollection,
+  duplicateCollection,
+  shareCollection,
+  searchAndFilterCollections,
+  getCollectionsName,
+  getCollectionById,
+  getCollectionRequestName,
+  updateTheCollection,
+};

@@ -11,8 +11,15 @@ import Home from "./pages/Home";
 import EnvironmentManagement from "./pages/EnvironmentManagement";
 import History from "./pages/History";
 import NotFoundPage from "./pages/NotFound";
+import Profile from "./pages/Profile";
 import PrivateRoute from "./components/PrivateRoute";
-import { BsHouse, BsClock, BsEnvelope, BsBoxArrowRight } from "react-icons/bs";
+import {
+  BsHouse,
+  BsClock,
+  BsEnvelope,
+  BsBoxArrowRight,
+  BsPerson,
+} from "react-icons/bs";
 import { setToken } from "./redux/auth.slice";
 import { useDispatch } from "react-redux";
 import { useNavigate } from "react-router-dom";
@@ -26,7 +33,8 @@ function MainLayout() {
   const shouldNotHideSidebar =
     location.pathname === "/" ||
     location.pathname === "/history" ||
-    location.pathname === "/environment";
+    location.pathname === "/environment" ||
+    location.pathname === "/profile";
 
   const signOut = () => {
     dispatch(setToken(null));
@@ -71,6 +79,13 @@ function MainLayout() {
               >
                 <BsEnvelope className="inline-block mr-4 text-xl" />
               </Link>
+              <Link
+                to="/profile"
+                className="p-4 hover:bg-[#FF6C37] hover:text-white transition-colors flex items-center"
+                title="Profile"
+              >
+                <BsPerson className="inline-block mr-4 text-xl" />
+              </Link>
               <p
                 onClick={signOut}
                 className="p-4 hover:bg-[#FF6C37] hover:text-white transition-colors flex items-center"
@@ -106,6 +121,14 @@ function MainLayout() {
               element={
                 <PrivateRoute>
                   <EnvironmentManagement />
+                </PrivateRoute>
+              }
+            />
+            <Route
+              path="/profile"
+              element={
+                <PrivateRoute>
+                  <Profile />
                 </PrivateRoute>
               }
             />

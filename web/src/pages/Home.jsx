@@ -126,7 +126,7 @@ export default function Home() {
       const updatedCollection = {
         name: collectionName,
         description: collectionDescription,
-        sharedWith: activeTab.data.sharedWith,
+        sharedWith: activeTab.data.collection.sharedWith,
       };
 
       // Save the updated collection
@@ -147,7 +147,7 @@ export default function Home() {
                     ...tab.data.collection,
                     name: collectionName,
                     description: collectionDescription,
-                    sharedWith: activeTab.data.sharedWith,
+                    sharedWith: activeTab.data.collection.sharedWith,
                   },
                 },
                 label: collectionName, // Update the tab label
@@ -359,7 +359,6 @@ export default function Home() {
       return;
     }
 
-    // console.log("file imported successfully");
     const formData = new FormData();
     formData.append("file", selectedFile);
     formData.append("collectionId", activeTab.data.collection._id);
@@ -401,13 +400,19 @@ export default function Home() {
 
   // Add the selected user to the sharedWith list
   const handleAddUser = async () => {
-    console.log(searchResults);
     if (emailInput.trim() !== "") {
       const userToAdd = searchResults.find((user) => user.email === emailInput);
 
       if (userToAdd) {
-        const currentSharedWith = activeTab.data.sharedWith || [];
-        const updatedSharedWith = [...currentSharedWith, userToAdd._id];
+        const currentSharedWith = activeTab.data.collection.sharedWith || [];
+        const updatedSharedWith = [
+          ...currentSharedWith,
+          {
+            _id: userToAdd._id,
+            firstName: userToAdd.firstName,
+            lastName: userToAdd.lastName,
+          },
+        ];
 
         try {
           // Update the backend
@@ -426,7 +431,10 @@ export default function Home() {
                     ...tab,
                     data: {
                       ...tab.data,
-                      sharedWith: updatedSharedWith,
+                      collection: {
+                        ...tab.data.collection,
+                        sharedWith: updatedSharedWith,
+                      },
                     },
                   }
                 : tab
@@ -444,6 +452,41 @@ export default function Home() {
       }
     } else {
       alert("Please enter a valid email address.");
+    }
+  };
+
+  // Remove the selected user
+  const handleRemoveUser = async (userId) => {
+    const updatedSharedWith = activeTab.data.collection.sharedWith.filter(
+      (user) => user._id !== userId
+    );
+
+    try {
+      // Update the backend
+      await axiosInstance.put(`/collections/${activeTab.data.collection._id}`, {
+        sharedWith: updatedSharedWith,
+      });
+
+      // Update the tab data locally
+      setTabs((prevTabs) =>
+        prevTabs.map((tab) =>
+          tab.id === activeTabId
+            ? {
+                ...tab,
+                data: {
+                  ...tab.data,
+                  collection: {
+                    ...tab.data.collection,
+                    sharedWith: updatedSharedWith,
+                  },
+                },
+              }
+            : tab
+        )
+      );
+    } catch (error) {
+      console.error("Error updating collection:", error);
+      alert("Failed to update collection.");
     }
   };
 
@@ -642,7 +685,7 @@ export default function Home() {
                 <h3 className="text-lg font-semibold mb-2">
                   Collection shared with
                 </h3>
-                {activeTab.isEditing ? (
+                {/* {activeTab.isEditing ? (
                   // Always show input in edit mode
                   <div className="mb-4">
                     <div className="flex items-center gap-2">
@@ -653,37 +696,95 @@ export default function Home() {
                         placeholder="Enter user email to share with"
                         className="w-full px-4 py-2 border border-gray-200 rounded-md"
                       />
-                      {/* <button
-                        onClick={() => {
-                          if (emailInput.trim() !== "") {
-                            const currentSharedWith =
-                              activeTab.data.sharedWith || [];
-                            const updatedSharedWith = [
-                              ...currentSharedWith,
-                              emailInput,
-                            ];
-                            setTabs((prevTabs) =>
-                              prevTabs.map((tab) =>
-                                tab.id === activeTabId
-                                  ? {
-                                      ...tab,
-                                      data: {
-                                        ...tab.data,
-                                        sharedWith: updatedSharedWith,
-                                      },
-                                    }
-                                  : tab
-                              )
-                            );
-
-                            setEmailInput(""); // Clear input
-                            setSearchResults([]); // Clear results
-                          }
-                        }}
+                      <button
+                        onClick={() => handleAddUser()}
                         className="bg-[#FF6C37] text-white px-4 py-2 rounded-md hover:bg-[#ff5719]"
                       >
                         Add
-                      </button> */}
+                      </button>
+                    </div>
+
+                    {searchResults && searchResults.length > 0 && (
+                      <div className="mt-2 border border-gray-200 rounded-md">
+                        {searchResults.map((user) => (
+                          <div
+                            key={user._id}
+                            className="p-2 cursor-pointer hover:bg-gray-100"
+                            onClick={() => {
+                              setEmailInput(user.email);
+                              // setSearchResults([]);
+                            }}
+                          >
+                            {user.email}
+                          </div>
+                        ))}
+                      </div>
+                    )}
+
+                    {activeTab.data.collection.sharedWith &&
+                    activeTab.data.collection.sharedWith.length > 0 ? (
+                      <div className="mt-4">
+                        <h4 className="font-medium mb-2">
+                          Currently shared with:
+                        </h4>
+                        <ul className="space-y-2">
+                          {activeTab.data.collection.sharedWith.map(
+                            (data, index) => (
+                              <li
+                                key={index}
+                                className="flex items-center justify-between p-2 bg-gray-100 rounded-md"
+                              >
+                                <span>
+                                  {data.firstName} {data.lastName}
+                                </span>
+                                <button
+                                  onClick={() => handleRemoveUser(data._id)}
+                                  className="text-red-500 hover:text-red-700 cursor-pointer"
+                                >
+                                  Remove
+                                </button>
+                              </li>
+                            )
+                          )}
+                        </ul>
+                      </div>
+                    ) : (
+                      <p className="mt-2 text-gray-500">
+                        This collection is not shared with anyone yet.
+                      </p>
+                    )}
+                  </div>
+                ) : (
+                  <>
+                    {!activeTab.data.collection.sharedWith ||
+                    activeTab.data.collection.sharedWith.length === 0 ? (
+                      <p>This collection is shared with no one.</p>
+                    ) : (
+                      <>
+                        <ul className="mt-2">
+                          {activeTab.data.collection.sharedWith.map(
+                            (data, index) => (
+                              <li key={index} className="p-1">
+                                {data.firstName} {data.lastName}
+                              </li>
+                            )
+                          )}
+                        </ul>
+                      </>
+                    )}
+                  </>
+                )} */}
+
+
+<div className="mb-4">
+                    <div className="flex items-center gap-2">
+                      <input
+                        type="email"
+                        value={emailInput}
+                        onChange={(e) => handleEmailChange(e)}
+                        placeholder="Enter user email to share with"
+                        className="w-full px-4 py-2 border border-gray-200 rounded-md"
+                      />
                       <button
                         onClick={() => handleAddUser()}
                         className="bg-[#FF6C37] text-white px-4 py-2 rounded-md hover:bg-[#ff5719]"
@@ -711,47 +812,31 @@ export default function Home() {
                     )}
 
                     {/* Display current shared users with option to remove */}
-                    {activeTab.data.sharedWith &&
-                    activeTab.data.sharedWith.length > 0 ? (
+                    {activeTab.data.collection.sharedWith &&
+                    activeTab.data.collection.sharedWith.length > 0 ? (
                       <div className="mt-4">
                         <h4 className="font-medium mb-2">
                           Currently shared with:
                         </h4>
                         <ul className="space-y-2">
-                          {activeTab.data.sharedWith.map((email, index) => (
-                            <li
-                              key={index}
-                              className="flex items-center justify-between p-2 bg-gray-100 rounded-md"
-                            >
-                              <span>{email}</span>
-                              <button
-                                onClick={() => {
-                                  const updatedSharedWith = [
-                                    ...activeTab.data.sharedWith,
-                                  ];
-                                  updatedSharedWith.splice(index, 1);
-
-                                  // Update the tab data locally
-                                  setTabs((prevTabs) =>
-                                    prevTabs.map((tab) =>
-                                      tab.id === activeTabId
-                                        ? {
-                                            ...tab,
-                                            data: {
-                                              ...tab.data,
-                                              sharedWith: updatedSharedWith,
-                                            },
-                                          }
-                                        : tab
-                                    )
-                                  );
-                                }}
-                                className="text-red-500 hover:text-red-700"
+                          {activeTab.data.collection.sharedWith.map(
+                            (data, index) => (
+                              <li
+                                key={index}
+                                className="flex items-center justify-between p-2 bg-gray-100 rounded-md"
                               >
-                                Remove
-                              </button>
-                            </li>
-                          ))}
+                                <span>
+                                  {data.firstName} {data.lastName}
+                                </span>
+                                <button
+                                  onClick={() => handleRemoveUser(data._id)}
+                                  className="text-red-500 hover:text-red-700 cursor-pointer"
+                                >
+                                  Remove
+                                </button>
+                              </li>
+                            )
+                          )}
                         </ul>
                       </div>
                     ) : (
@@ -760,26 +845,9 @@ export default function Home() {
                       </p>
                     )}
                   </div>
-                ) : (
-                  // Non-editing view
-                  <>
-                    {!activeTab.data.sharedWith ||
-                    activeTab.data.sharedWith.length === 0 ? (
-                      <p>This collection is shared with no one.</p>
-                    ) : (
-                      <>
-                        <p>This collection is shared with other users also.</p>
-                        <ul className="mt-2">
-                          {activeTab.data.sharedWith.map((email, index) => (
-                            <li key={index} className="p-1">
-                              {email}
-                            </li>
-                          ))}
-                        </ul>
-                      </>
-                    )}
-                  </>
-                )}
+
+
+
               </div>
 
               {/* Save Changes Button */}
