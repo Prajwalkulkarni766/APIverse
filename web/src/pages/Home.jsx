@@ -290,7 +290,7 @@ export default function Home() {
       )
     );
 
-    setActiveTabId(`request-${_id}`); // Ensure the active tab stays active
+    setActiveTabId(`request-${id}`); // Ensure the active tab stays active
   };
 
   // Export the data

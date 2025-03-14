@@ -41,6 +41,9 @@ export default function RequestUI({
   const [isTabsCollapsed, setIsTabsCollapsed] = useState(true);
   const [isResponseCollapsed, setIsResponseCollapsed] = useState(false);
 
+  // Request send button state
+  const [sending, setSending] = useState(false);
+
   // Refs for dropdown containers
   const methodDropdownRef = useRef(null);
   const authDropdownRef = useRef(null);
@@ -149,6 +152,7 @@ export default function RequestUI({
 
   // Save request to server
   const handleSave = async () => {
+    console.log(selectedRequest._id);
     try {
       const response = await axiosInstance.patch(
         `/requests/${selectedRequest?._id}/save`,
@@ -161,6 +165,7 @@ export default function RequestUI({
           headers: headers,
           bodyType: bodyType,
           body: bodyType === "raw" ? bodyData : file,
+          envId: selectedEnv,
         }
       );
 
@@ -182,7 +187,9 @@ export default function RequestUI({
 
   // Send request and save to history
   const handleSend = async () => {
-    let updatedUrl = null;
+    setSending(true);
+
+    let updatedUrl = url;
     let variable = extractEnvVariableName(url);
     let isFound = false;
 
@@ -195,12 +202,15 @@ export default function RequestUI({
       });
     }
 
-    if (!isFound) {
+    if (variable && !isFound) {
       alert(
         "Inavlid variable name. Provided variable not found in environment that you have selected"
       );
       return;
     }
+
+    updatedUrl = updatedUrl.replace(/\s+/g, "");
+    // setUrl(updatedUrl);
 
     // Create request configuration based on user inputs
     const config = {
@@ -298,7 +308,7 @@ export default function RequestUI({
       // Post to history
       await axiosInstance.post("/history", {
         method,
-        url,
+        url: updatedUrl,
         statusCode: response.status,
         status,
         responseTime,
@@ -306,15 +316,21 @@ export default function RequestUI({
       });
     } catch (error) {
       console.error("Error sending request:", error);
+
+      setResponseBody(error.message);
+      setHeadersReceivedInResponse([]);
+
       // Handle any error that occurs during the request
       await axiosInstance.post("/history", {
         method,
-        url,
+        url: updatedUrl,
         statusCode: error.response ? error.response.status : null,
-        status: "error", // If request failed, store "error"
+        status: "ERROR", // If request failed, store "error"
         responseTime: Date.now() - startTime, // Handle response time
         responseSize: 0, // Set response size to 0 if error occurred
       });
+    } finally {
+      setSending(false);
     }
   };
 
@@ -344,6 +360,9 @@ export default function RequestUI({
 
   useEffect(() => {
     fetchEnvVariableNames();
+    if (selectedRequest.envId) {
+      setSelectedEnv(selectedRequest?.envId);
+    }
   }, []);
 
   return (
@@ -402,10 +421,15 @@ export default function RequestUI({
 
         {/* Send Button */}
         <button
-          className="px-6 py-2 bg-[#FF6C37] text-white rounded-md hover:bg-[#ff5719] cursor-pointer"
+          className={`px-6 py-2 rounded-md cursor-pointer ${
+            sending
+              ? "border border-[#FF6C37] text-[#FF6C37]"
+              : "text-white hover:bg-[#ff5719] bg-[#FF6C37]"
+          }  `}
           onClick={handleSend}
+          disabled={sending}
         >
-          Send
+          {sending ? "Sending" : "Send"}
         </button>
       </div>
 

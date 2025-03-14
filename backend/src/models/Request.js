@@ -20,9 +20,14 @@ const requestSchema = new mongoose.Schema(
     },
     authToken: { type: String, default: "" },
     headers: { type: Array, default: [] },
-    bodyType: { type: String, enum: ["none", "raw", "binary"], default: "none" },
+    bodyType: {
+      type: String,
+      enum: ["none", "raw", "binary"],
+      default: "none",
+    },
     body: { type: Object, default: null },
     favorite: { type: Boolean, default: false },
+    envId: { type: mongoose.Schema.Types.ObjectId, ref: "Environment" },
     userId: { type: mongoose.Schema.Types.ObjectId, ref: "User" },
   },
   { timestamps: true }
