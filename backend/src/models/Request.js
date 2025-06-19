@@ -25,6 +25,11 @@ const requestSchema = new mongoose.Schema(
       enum: ["none", "raw", "binary"],
       default: "none",
     },
+    rawType: {
+      type: String,
+      enum: ["text", "json"],
+      default: "text",
+    },
     body: { type: Object, default: null },
     favorite: { type: Boolean, default: false },
     envId: { type: mongoose.Schema.Types.ObjectId, ref: "Environment" },

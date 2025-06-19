@@ -24,6 +24,7 @@ export default function RequestUI({
   const [authToken, setAuthToken] = useState(selectedRequest.authToken || "");
   const [headers, setHeaders] = useState(selectedRequest.headers || []);
   const [file, setFile] = useState(null);
+  const [rawType, setRawType] = useState(selectedRequest.rawType || "text");
 
   // Environment variable states
   const [envVariableNames, setEnvVariableNames] = useState([]);
@@ -152,7 +153,6 @@ export default function RequestUI({
 
   // Save request to server
   const handleSave = async () => {
-    console.log(selectedRequest._id);
     try {
       const response = await axiosInstance.patch(
         `/requests/${selectedRequest?._id}/save`,
@@ -164,6 +164,7 @@ export default function RequestUI({
           authToken: authToken,
           headers: headers,
           bodyType: bodyType,
+          rawType: rawType,
           body: bodyType === "raw" ? bodyData : file,
           envId: selectedEnv,
         }
@@ -193,7 +194,8 @@ export default function RequestUI({
     let variable = extractEnvVariableName(url);
     let isFound = false;
 
-    if (variable !== null) {
+    if (variable !== null && dataOfSelectedEnv.variables) {
+      console.log(variable)
       dataOfSelectedEnv.variables.forEach((data) => {
         if (variable === data.variable) {
           updatedUrl = url.replace(`{{ ${variable} }}`, data.value);
@@ -240,7 +242,22 @@ export default function RequestUI({
     // Add body content for POST, PUT, PATCH, etc.
     if (method !== "GET" && bodyType !== "none") {
       if (bodyType === "raw") {
-        config.data = bodyData; // Send raw body data
+        // config.data = bodyData; // Send raw body data
+        if (rawType === "json") {
+          try {
+            // Send raw JSON body data
+            config.data = JSON.parse(bodyData); // Parse the JSON string
+            config.headers["Content-Type"] = "application/json"; // Ensure the content type is set to application/json
+          } catch (error) {
+            alert("Invalid JSON format.");
+            setSending(false);
+            return;
+          }
+        } else if (rawType === "text") {
+          // Send raw plain text body data
+          config.data = bodyData;
+          config.headers["Content-Type"] = "text/plain"; // Set content type to text/plain
+        }
       } else if (bodyType === "binary" && file) {
         const formData = new FormData();
         formData.append("file", file);
@@ -255,6 +272,54 @@ export default function RequestUI({
     try {
       response = await axios(config);
 
+      // Handle file download if response is a file (e.g., Content-Type is `application/octet-stream` or `application/zip`)
+      const contentType = response.headers["content-type"];
+      if (
+        contentType.includes("application/octet-stream") ||
+        contentType.includes("application/zip")
+      ) {
+        const fileBlob = new Blob([response.data], { type: contentType });
+        const fileName = response.headers["content-disposition"]
+          ? response.headers["content-disposition"].split("filename=")[1]
+          : "downloaded-file";
+
+        const link = document.createElement("a");
+        link.href = URL.createObjectURL(fileBlob);
+        link.download = fileName; // Set file name for download
+        link.click(); // Trigger the download
+      } else {
+        // Handle non-file response (e.g., JSON, text, HTML)
+        // Parse response body based on content type
+        let parsedResponseBody = response.data;
+        const contentType = response.headers["content-type"];
+
+        if (contentType.includes("application/json")) {
+          // Handle JSON response
+          parsedResponseBody = JSON.stringify(response.data, null, 2);
+        } else if (contentType.includes("text/html")) {
+          // Handle HTML response
+          parsedResponseBody = response.data;
+        } else if (
+          contentType.includes("application/xml") ||
+          contentType.includes("text/xml")
+        ) {
+          // Handle XML response
+          parsedResponseBody = response.data;
+        } else if (contentType.includes("text/plain")) {
+          // Handle plain text response
+          parsedResponseBody = response.data;
+        } else if (contentType.includes("text/csv")) {
+          // Handle CSV response
+          parsedResponseBody = response.data;
+        } else {
+          // Handle other content types
+          parsedResponseBody = response.data;
+        }
+
+        // Set the response body
+        setResponseBody(parsedResponseBody);
+      }
+
       // Calculate response time
       const responseTime = Date.now() - startTime;
 
@@ -262,36 +327,6 @@ export default function RequestUI({
       const responseSize = new TextEncoder().encode(
         JSON.stringify(response.data)
       ).length;
-
-      // Parse response body based on content type
-      let parsedResponseBody = response.data;
-      const contentType = response.headers["content-type"];
-
-      if (contentType.includes("application/json")) {
-        // Handle JSON response
-        parsedResponseBody = JSON.stringify(response.data, null, 2);
-      } else if (contentType.includes("text/html")) {
-        // Handle HTML response
-        parsedResponseBody = response.data;
-      } else if (
-        contentType.includes("application/xml") ||
-        contentType.includes("text/xml")
-      ) {
-        // Handle XML response
-        parsedResponseBody = response.data;
-      } else if (contentType.includes("text/plain")) {
-        // Handle plain text response
-        parsedResponseBody = response.data;
-      } else if (contentType.includes("text/csv")) {
-        // Handle CSV response
-        parsedResponseBody = response.data;
-      } else {
-        // Handle other content types
-        parsedResponseBody = response.data;
-      }
-
-      // Set the response body
-      setResponseBody(parsedResponseBody);
 
       // Handle headers
       setHeadersReceivedInResponse(
@@ -338,6 +373,7 @@ export default function RequestUI({
   const fetchEnvVariableNames = async () => {
     try {
       const envVariableName = await axiosInstance.get("/environments/name");
+      // console.log(envVariableName.data)
       setEnvVariableNames(envVariableName.data);
     } catch (err) {
       console.error(err);
@@ -352,6 +388,7 @@ export default function RequestUI({
       const envData = await axiosInstance(
         `/environments/detail/${e.target.value}`
       );
+      console.log(envData.data)
       setDataOfSelectedEnv(envData.data);
     } catch (err) {
       console.error(err);
@@ -484,6 +521,16 @@ export default function RequestUI({
                         {type}
                       </label>
                     ))}
+                    {bodyType === "raw" && (
+                      <select
+                        className="ml-12 text-blue-500"
+                        onChange={(event) => setRawType(event.target.value)}
+                        value={rawType}
+                      >
+                        <option value="text">TEXT</option>
+                        <option value="json">JSON</option>
+                      </select>
+                    )}
                   </div>
                   {bodyType === "raw" && (
                     <textarea
@@ -607,7 +654,7 @@ export default function RequestUI({
                       <select
                         className="w-full px-4 py-2 border border-gray-200 rounded-md"
                         value={selectedEnv}
-                        onChange={handleEnvChange}
+                        onChange={(e) => handleEnvChange(e)}
                       >
                         <option value="">Select Environment Variable</option>
                         {envVariableNames.map((envName, index) => (
